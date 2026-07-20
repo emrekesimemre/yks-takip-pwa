@@ -6,6 +6,7 @@ export type TopicProgress = {
 };
 
 export type CourseSolvedQuestions = Record<string, number>;
+export type TopicSolvedQuestions = Record<string, number>;
 
 export type MockExamCourseResult = {
   courseKey: string;
@@ -29,7 +30,9 @@ export type Student = {
   topics: TopicProgress[];
   weeklySelectedTopics: string[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
+  solvedQuestionsByTopic: TopicSolvedQuestions;
   weeklySolvedQuestionsByCourse: CourseSolvedQuestions;
+  weeklySolvedQuestionsByTopic: TopicSolvedQuestions;
   mockExams: MockExam[];
 };
 

@@ -42,7 +42,9 @@ export async function POST(req: Request) {
       topics: initialTopics,
       weeklySelectedTopics: [],
       solvedQuestionsByCourse: {},
+      solvedQuestionsByTopic: {},
       weeklySolvedQuestionsByCourse: {},
+      weeklySolvedQuestionsByTopic: {},
       mockExams: [],
     });
 

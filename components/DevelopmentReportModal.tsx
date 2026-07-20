@@ -13,6 +13,7 @@ type Props = {
   target?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
+  solvedQuestionsByTopic: CourseSolvedQuestions;
 };
 
 export default function DevelopmentReportModal({
@@ -22,6 +23,7 @@ export default function DevelopmentReportModal({
   target,
   topics,
   solvedQuestionsByCourse,
+  solvedQuestionsByTopic,
 }: Props) {
   useEffect(() => {
     if (!isOpen) return;
@@ -46,7 +48,7 @@ export default function DevelopmentReportModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6 print:p-0 print:static print:overflow-visible print:block">
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm print:hidden"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm print:hidden cursor-pointer"
         onClick={onClose}
         aria-hidden
       />
@@ -90,6 +92,7 @@ export default function DevelopmentReportModal({
           target={target}
           topics={topics}
           solvedQuestionsByCourse={solvedQuestionsByCourse}
+          solvedQuestionsByTopic={solvedQuestionsByTopic}
         />
       </motion.div>
     </div>

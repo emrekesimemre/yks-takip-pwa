@@ -1,26 +1,30 @@
 "use client";
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LabelList,
-} from "recharts";
 import { masterCurriculum, type Curriculum } from "@/data/subjects";
-import type { CourseSolvedQuestions, TopicProgress } from "@/store/useStudentStore";
+import type {
+  CourseSolvedQuestions,
+  TopicProgress,
+} from "@/store/useStudentStore";
 import {
   getCourseProgressList,
   getCourseSolvedCount,
   getExamProgress,
   getOverallProgress,
+  getTotalSolvedQuestions,
 } from "@/utils/curriculum";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Sector,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const PIE_COLORS = ["#2563eb", "#e2e8f0"];
 const BAR_COLOR = "#4f46e5";
@@ -30,6 +34,7 @@ type Props = {
   target?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
+  solvedQuestionsByTopic: CourseSolvedQuestions;
 };
 
 function CompletionPie({
@@ -47,7 +52,9 @@ function CompletionPie({
 
   return (
     <div className="flex flex-col items-center">
-      <h3 className="text-sm font-bold text-slate-700 mb-2">{exam} Genel Durum</h3>
+      <h3 className="text-sm font-bold text-slate-700 mb-2">
+        {exam} Genel Durum
+      </h3>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
@@ -58,11 +65,13 @@ function CompletionPie({
             outerRadius={75}
             paddingAngle={2}
             dataKey="value"
-          >
-            {pieData.map((_, index) => (
-              <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-            ))}
-          </Pie>
+            shape={(props) => (
+              <Sector
+                {...props}
+                fill={PIE_COLORS[props.index % PIE_COLORS.length]}
+              />
+            )}
+          />
           <Tooltip
             formatter={(value, name) => [`${value ?? 0} konu`, String(name)]}
           />
@@ -94,14 +103,25 @@ function CourseBarChart({
       <h3 className="text-sm font-bold text-slate-700 mb-3">
         {exam} Ders Bazlı İlerleme
       </h3>
-      <ResponsiveContainer width="100%" height={Math.max(220, data.length * 36)}>
+      <ResponsiveContainer
+        width="100%"
+        height={Math.max(220, data.length * 36)}
+      >
         <BarChart
           data={data}
           layout="vertical"
           margin={{ top: 4, right: 48, left: 4, bottom: 4 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-          <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `%${v}`} />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            horizontal={false}
+            stroke="#f1f5f9"
+          />
+          <XAxis
+            type="number"
+            domain={[0, 100]}
+            tickFormatter={(v) => `%${v}`}
+          />
           <YAxis
             type="category"
             dataKey="name"
@@ -109,8 +129,18 @@ function CourseBarChart({
             tick={{ fontSize: 11, fill: "#475569" }}
           />
           <Tooltip formatter={(value) => [`%${value ?? 0}`, "Tamamlanma"]} />
-          <Bar dataKey="percentage" fill={BAR_COLOR} radius={[0, 4, 4, 0]} barSize={18}>
-            <LabelList dataKey="label" position="right" fill="#64748b" fontSize={11} />
+          <Bar
+            dataKey="percentage"
+            fill={BAR_COLOR}
+            radius={[0, 4, 4, 0]}
+            barSize={18}
+          >
+            <LabelList
+              dataKey="label"
+              position="right"
+              fill="#64748b"
+              fontSize={11}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -123,6 +153,7 @@ export default function DevelopmentReportView({
   target,
   topics,
   solvedQuestionsByCourse,
+  solvedQuestionsByTopic,
 }: Props) {
   const overallProgress = getOverallProgress(topics);
   const reportDate = new Date().toLocaleDateString("tr-TR", {
@@ -131,17 +162,10 @@ export default function DevelopmentReportView({
     year: "numeric",
   });
 
-  const totalSolved = (["TYT", "AYT"] as const).reduce((sum, exam) => {
-    return (
-      sum +
-      Object.keys(masterCurriculum[exam]).reduce(
-        (examSum, course) =>
-          examSum +
-          getCourseSolvedCount(solvedQuestionsByCourse, exam, course),
-        0,
-      )
-    );
-  }, 0);
+  const totalSolved = getTotalSolvedQuestions(
+    solvedQuestionsByCourse,
+    solvedQuestionsByTopic,
+  );
 
   return (
     <div className="p-6 sm:p-8 bg-white text-slate-900">
@@ -181,6 +205,7 @@ export default function DevelopmentReportView({
                   solvedQuestionsByCourse,
                   exam,
                   course,
+                  solvedQuestionsByTopic,
                 );
                 if (count === 0) return null;
                 return (

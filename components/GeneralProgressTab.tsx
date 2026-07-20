@@ -4,26 +4,30 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { masterCurriculum, type Curriculum } from "@/data/subjects";
 import type { CourseSolvedQuestions, TopicProgress } from "@/store/useStudentStore";
-import { getCourseKey, getCourseProgress, getCourseSolvedCount } from "@/utils/curriculum";
+import { getCourseKey, getCourseProgress, getCourseSolvedCount, getCourseGeneralSolvedCount, getTopicSolvedCount } from "@/utils/curriculum";
 import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput";
 import { FiCheck } from "react-icons/fi";
 
 type Props = {
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
+  solvedQuestionsByTopic: CourseSolvedQuestions;
   onToggleCompletion: (topicId: string, isCompleted: boolean) => void;
   onUpdateSolvedQuestions: (
     exam: keyof Curriculum,
     course: string,
     count: number,
   ) => void;
+  onUpdateTopicSolvedQuestions: (topicId: string, count: number) => void;
 };
 
 export default function GeneralProgressTab({
   topics,
   solvedQuestionsByCourse,
+  solvedQuestionsByTopic,
   onToggleCompletion,
   onUpdateSolvedQuestions,
+  onUpdateTopicSolvedQuestions,
 }: Props) {
   const [activeExam, setActiveExam] = useState<keyof Curriculum>("TYT");
 
@@ -64,6 +68,12 @@ export default function GeneralProgressTab({
             solvedQuestionsByCourse,
             activeExam,
             courseName,
+            solvedQuestionsByTopic,
+          );
+          const generalSolved = getCourseGeneralSolvedCount(
+            solvedQuestionsByCourse,
+            activeExam,
+            courseName,
           );
 
           return (
@@ -97,25 +107,28 @@ export default function GeneralProgressTab({
                 <CourseSolvedQuestionsInput
                   label="Toplam çözülen soru"
                   value={solvedCount}
-                  onChange={(count) =>
-                    onUpdateSolvedQuestions(activeExam, courseName, count)
-                  }
+                  onChange={() => {}}
+                  disabled
                 />
               </div>
 
               <div className="space-y-1 mt-4 max-h-64 overflow-y-auto pr-1">
                 {courseTopics.map((topic) => {
                   const isCompleted = getTopicProgress(topic.id);
+                  const topicSolved = getTopicSolvedCount(
+                    solvedQuestionsByTopic,
+                    topic.id,
+                  );
                   return (
-                    <label
+                    <div
                       key={topic.id}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all ${
                         isCompleted
                           ? "bg-green-50/60 border border-green-100"
                           : "hover:bg-white border border-transparent hover:border-slate-100"
                       }`}
                     >
-                      <div className="relative mt-0.5 shrink-0">
+                      <label className="relative mt-0.5 shrink-0 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={isCompleted}
@@ -135,9 +148,9 @@ export default function GeneralProgressTab({
                             <FiCheck className="text-white text-[10px]" />
                           )}
                         </div>
-                      </div>
+                      </label>
                       <span
-                        className={`text-sm leading-snug ${
+                        className={`flex-1 min-w-0 text-sm leading-snug ${
                           isCompleted
                             ? "line-through text-slate-400"
                             : "text-slate-700"
@@ -145,9 +158,30 @@ export default function GeneralProgressTab({
                       >
                         {topic.title}
                       </span>
-                    </label>
+                      <CourseSolvedQuestionsInput
+                        compact
+                        label="Çözülen soru"
+                        value={topicSolved}
+                        onChange={(count) =>
+                          onUpdateTopicSolvedQuestions(topic.id, count)
+                        }
+                      />
+                    </div>
                   );
                 })}
+                <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-100/80 border border-slate-200 mt-2">
+                  <span className="flex-1 min-w-0 text-sm font-medium text-slate-600">
+                    Genel
+                  </span>
+                  <CourseSolvedQuestionsInput
+                    compact
+                    label="Genel çözülen soru"
+                    value={generalSolved}
+                    onChange={(count) =>
+                      onUpdateSolvedQuestions(activeExam, courseName, count)
+                    }
+                  />
+                </div>
               </div>
             </motion.div>
           );

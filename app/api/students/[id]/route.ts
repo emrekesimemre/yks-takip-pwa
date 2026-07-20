@@ -66,9 +66,16 @@ export async function PATCH(
     if (body.solvedQuestionsByCourse !== undefined) {
       updateFields.solvedQuestionsByCourse = body.solvedQuestionsByCourse;
     }
+    if (body.solvedQuestionsByTopic !== undefined) {
+      updateFields.solvedQuestionsByTopic = body.solvedQuestionsByTopic;
+    }
     if (body.weeklySolvedQuestionsByCourse !== undefined) {
       updateFields.weeklySolvedQuestionsByCourse =
         body.weeklySolvedQuestionsByCourse;
+    }
+    if (body.weeklySolvedQuestionsByTopic !== undefined) {
+      updateFields.weeklySolvedQuestionsByTopic =
+        body.weeklySolvedQuestionsByTopic;
     }
     if (body.mockExams !== undefined) {
       updateFields.mockExams = body.mockExams;

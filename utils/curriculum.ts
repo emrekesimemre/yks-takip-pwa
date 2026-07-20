@@ -107,10 +107,67 @@ export function parseCourseKey(key: string): { exam: ExamType; course: string } 
   return { exam: exam as ExamType, course: rest.join("-") };
 }
 
-export function getCourseSolvedCount(
+export function getTopicSolvedCount(
+  record: Record<string, number> | undefined,
+  topicId: string,
+): number {
+  return record?.[topicId] ?? 0;
+}
+
+export function getCourseTopicSolvedSum(
   record: Record<string, number> | undefined,
   exam: ExamType,
   course: string,
 ): number {
-  return record?.[getCourseKey(exam, course)] ?? 0;
+  const courseTopics = masterCurriculum[exam][course] ?? [];
+  return courseTopics.reduce(
+    (sum, topic) => sum + getTopicSolvedCount(record, topic.id),
+    0,
+  );
+}
+
+export function getCourseGeneralSolvedCount(
+  courseRecord: Record<string, number> | undefined,
+  exam: ExamType,
+  course: string,
+): number {
+  return courseRecord?.[getCourseKey(exam, course)] ?? 0;
+}
+
+export function getCourseSolvedCount(
+  courseRecord: Record<string, number> | undefined,
+  exam: ExamType,
+  course: string,
+  topicRecord?: Record<string, number> | undefined,
+): number {
+  return (
+    getCourseTopicSolvedSum(topicRecord, exam, course) +
+    getCourseGeneralSolvedCount(courseRecord, exam, course)
+  );
+}
+
+export function getTotalSolvedQuestions(
+  courseRecord: Record<string, number> | Map<string, number> | undefined,
+  topicRecord?: Record<string, number> | Map<string, number> | undefined,
+): number {
+  const normalizedTopics =
+    topicRecord instanceof Map
+      ? Object.fromEntries(topicRecord)
+      : (topicRecord ?? {});
+  const normalizedCourses =
+    courseRecord instanceof Map
+      ? Object.fromEntries(courseRecord)
+      : (courseRecord ?? {});
+
+  return (["TYT", "AYT"] as const).reduce((total, exam) => {
+    return (
+      total +
+      Object.keys(masterCurriculum[exam]).reduce((examTotal, course) => {
+        return (
+          examTotal +
+          getCourseSolvedCount(normalizedCourses, exam, course, normalizedTopics)
+        );
+      }, 0)
+    );
+  }, 0);
 }

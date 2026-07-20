@@ -9,6 +9,7 @@ import {
   getCourseSolvedCount,
   getIncompleteTopics,
   getTopicMeta,
+  getTopicSolvedCount,
 } from "@/utils/curriculum";
 import { getPacingWarnings } from "@/utils/pacing";
 import PacingAlert from "@/components/PacingAlert";
@@ -19,12 +20,14 @@ type Props = {
   topics: TopicProgress[];
   weeklySelectedTopics: string[];
   weeklySolvedQuestionsByCourse: CourseSolvedQuestions;
+  weeklySolvedQuestionsByTopic: CourseSolvedQuestions;
   onToggleWeeklySelection: (topicId: string, selected: boolean) => void;
   onUpdateWeeklySolvedQuestions: (
     exam: "TYT" | "AYT",
     course: string,
     count: number,
   ) => void;
+  onUpdateWeeklyTopicSolvedQuestions: (topicId: string, count: number) => void;
   onPrint: () => void;
 };
 
@@ -32,8 +35,10 @@ export default function WeeklyPlanTab({
   topics,
   weeklySelectedTopics,
   weeklySolvedQuestionsByCourse,
+  weeklySolvedQuestionsByTopic,
   onToggleWeeklySelection,
   onUpdateWeeklySolvedQuestions,
+  onUpdateWeeklyTopicSolvedQuestions,
   onPrint,
 }: Props) {
   const incompleteTopics = getIncompleteTopics(topics);
@@ -94,6 +99,7 @@ export default function WeeklyPlanTab({
               weeklySolvedQuestionsByCourse,
               exam,
               course,
+              weeklySolvedQuestionsByTopic,
             );
 
             return (
@@ -116,27 +122,44 @@ export default function WeeklyPlanTab({
                 <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
                   {groupTopics.map((topic) => {
                     const isSelected = weeklySelectedTopics.includes(topic.id);
+                    const topicWeeklySolved = getTopicSolvedCount(
+                      weeklySolvedQuestionsByTopic,
+                      topic.id,
+                    );
                     return (
-                      <label
+                      <div
                         key={topic.id}
-                        className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                        className={`flex items-start gap-3 p-2.5 rounded-lg transition-all ${
                           isSelected
                             ? "bg-blue-50 ring-1 ring-blue-200 border border-blue-100"
                             : "hover:bg-white border border-transparent"
                         }`}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() =>
-                            onToggleWeeklySelection(topic.id, !isSelected)
-                          }
-                          className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                        />
-                        <span className="text-sm text-slate-700 leading-snug">
+                        <label
+                          className="mt-0.5 shrink-0 cursor-pointer"
+                          aria-label={`${topic.title} seç`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() =>
+                              onToggleWeeklySelection(topic.id, !isSelected)
+                            }
+                            className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </label>
+                        <span className="flex-1 min-w-0 text-sm text-slate-700 leading-snug">
                           {topic.title}
                         </span>
-                      </label>
+                        <CourseSolvedQuestionsInput
+                          compact
+                          label="Bu hafta çözülecek soru"
+                          value={topicWeeklySolved}
+                          onChange={(count) =>
+                            onUpdateWeeklyTopicSolvedQuestions(topic.id, count)
+                          }
+                        />
+                      </div>
                     );
                   })}
                 </div>

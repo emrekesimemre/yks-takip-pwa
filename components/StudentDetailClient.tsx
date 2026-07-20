@@ -40,7 +40,9 @@ type PersistPayload = {
   topics?: TopicProgress[];
   weeklySelectedTopics?: string[];
   solvedQuestionsByCourse?: CourseSolvedQuestions;
+  solvedQuestionsByTopic?: CourseSolvedQuestions;
   weeklySolvedQuestionsByCourse?: CourseSolvedQuestions;
+  weeklySolvedQuestionsByTopic?: CourseSolvedQuestions;
   mockExams?: MockExam[];
 };
 
@@ -93,8 +95,14 @@ export default function StudentDetailClient({
             solvedQuestionsByCourse: normalizeSolvedQuestions(
               data.solvedQuestionsByCourse,
             ),
+            solvedQuestionsByTopic: normalizeSolvedQuestions(
+              data.solvedQuestionsByTopic,
+            ),
             weeklySolvedQuestionsByCourse: normalizeSolvedQuestions(
               data.weeklySolvedQuestionsByCourse,
+            ),
+            weeklySolvedQuestionsByTopic: normalizeSolvedQuestions(
+              data.weeklySolvedQuestionsByTopic,
             ),
             mockExams: data.mockExams ?? [],
           });
@@ -136,10 +144,21 @@ export default function StudentDetailClient({
               data.solvedQuestionsByCourse ?? updates.solvedQuestionsByCourse,
             );
           }
+          if (updates.solvedQuestionsByTopic !== undefined) {
+            merged.solvedQuestionsByTopic = normalizeSolvedQuestions(
+              data.solvedQuestionsByTopic ?? updates.solvedQuestionsByTopic,
+            );
+          }
           if (updates.weeklySolvedQuestionsByCourse !== undefined) {
             merged.weeklySolvedQuestionsByCourse = normalizeSolvedQuestions(
               data.weeklySolvedQuestionsByCourse ??
                 updates.weeklySolvedQuestionsByCourse,
+            );
+          }
+          if (updates.weeklySolvedQuestionsByTopic !== undefined) {
+            merged.weeklySolvedQuestionsByTopic = normalizeSolvedQuestions(
+              data.weeklySolvedQuestionsByTopic ??
+                updates.weeklySolvedQuestionsByTopic,
             );
           }
           if (updates.mockExams !== undefined) {
@@ -208,6 +227,38 @@ export default function StudentDetailClient({
 
       updateCurrentStudent({ solvedQuestionsByCourse: updated });
       persistUpdate({ solvedQuestionsByCourse: updated });
+    },
+    [updateCurrentStudent, persistUpdate],
+  );
+
+  const handleUpdateTopicSolvedQuestions = useCallback(
+    (topicId: string, count: number) => {
+      const student = useStudentStore.getState().currentStudent;
+      if (!student) return;
+
+      const updated = {
+        ...(student.solvedQuestionsByTopic ?? {}),
+        [topicId]: count,
+      };
+
+      updateCurrentStudent({ solvedQuestionsByTopic: updated });
+      persistUpdate({ solvedQuestionsByTopic: updated });
+    },
+    [updateCurrentStudent, persistUpdate],
+  );
+
+  const handleUpdateWeeklyTopicSolvedQuestions = useCallback(
+    (topicId: string, count: number) => {
+      const student = useStudentStore.getState().currentStudent;
+      if (!student) return;
+
+      const updated = {
+        ...(student.weeklySolvedQuestionsByTopic ?? {}),
+        [topicId]: count,
+      };
+
+      updateCurrentStudent({ weeklySolvedQuestionsByTopic: updated });
+      persistUpdate({ weeklySolvedQuestionsByTopic: updated });
     },
     [updateCurrentStudent, persistUpdate],
   );
@@ -323,8 +374,11 @@ export default function StudentDetailClient({
   const overallProgress = getOverallProgress(currentStudent.topics);
   const weeklySelected = currentStudent.weeklySelectedTopics ?? [];
   const solvedQuestions = currentStudent.solvedQuestionsByCourse ?? {};
+  const solvedQuestionsByTopic = currentStudent.solvedQuestionsByTopic ?? {};
   const weeklySolvedQuestions =
     currentStudent.weeklySolvedQuestionsByCourse ?? {};
+  const weeklySolvedQuestionsByTopic =
+    currentStudent.weeklySolvedQuestionsByTopic ?? {};
   const mockExams = currentStudent.mockExams ?? [];
 
   const circumference = 2 * Math.PI * 42;
@@ -495,17 +549,23 @@ export default function StudentDetailClient({
                   <GeneralProgressTab
                     topics={currentStudent.topics}
                     solvedQuestionsByCourse={solvedQuestions}
+                    solvedQuestionsByTopic={solvedQuestionsByTopic}
                     onToggleCompletion={handleToggleCompletion}
                     onUpdateSolvedQuestions={handleUpdateSolvedQuestions}
+                    onUpdateTopicSolvedQuestions={handleUpdateTopicSolvedQuestions}
                   />
                 ) : activeTab === "weekly" ? (
                   <WeeklyPlanTab
                     topics={currentStudent.topics}
                     weeklySelectedTopics={weeklySelected}
                     weeklySolvedQuestionsByCourse={weeklySolvedQuestions}
+                    weeklySolvedQuestionsByTopic={weeklySolvedQuestionsByTopic}
                     onToggleWeeklySelection={handleToggleWeeklySelection}
                     onUpdateWeeklySolvedQuestions={
                       handleUpdateWeeklySolvedQuestions
+                    }
+                    onUpdateWeeklyTopicSolvedQuestions={
+                      handleUpdateWeeklyTopicSolvedQuestions
                     }
                     onPrint={handleWeeklyPrint}
                   />
@@ -536,6 +596,7 @@ export default function StudentDetailClient({
         target={currentStudent.target}
         topics={currentStudent.topics}
         solvedQuestionsByCourse={solvedQuestions}
+        solvedQuestionsByTopic={solvedQuestionsByTopic}
       />
 
       <AddStudentModal />

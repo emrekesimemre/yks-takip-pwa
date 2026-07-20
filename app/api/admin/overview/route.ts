@@ -1,18 +1,21 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { authOptions, isAdminEmail } from "@/lib/auth";
 import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
-import { getOverallProgress } from "@/utils/curriculum";
-import { normalizeSolvedQuestions, normalizeTopics } from "@/utils/student";
-import { calculateExamTotalNet } from "@/utils/deneme";
 import type { MockExam } from "@/store/useStudentStore";
+import {
+  getOverallProgress,
+  getTotalSolvedQuestions as getTotalSolvedFromCurriculum,
+} from "@/utils/curriculum";
+import { calculateExamTotalNet } from "@/utils/deneme";
+import { normalizeTopics } from "@/utils/student";
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
 
 function getTotalSolvedQuestions(
-  record: Record<string, number> | Map<string, number> | undefined,
+  courseRecord: Record<string, number> | Map<string, number> | undefined,
+  topicRecord?: Record<string, number> | Map<string, number> | undefined,
 ): number {
-  const normalized = normalizeSolvedQuestions(record);
-  return Object.values(normalized).reduce((sum, count) => sum + count, 0);
+  return getTotalSolvedFromCurriculum(courseRecord, topicRecord);
 }
 
 function getLatestMockExamNet(mockExams: MockExam[]): number | null {
@@ -48,9 +51,13 @@ export async function GET() {
         teacherEmail: student.teacherEmail,
         progress: getOverallProgress(topics),
         weeklyTopicCount: student.weeklySelectedTopics?.length ?? 0,
-        totalSolvedQuestions: getTotalSolvedQuestions(student.solvedQuestionsByCourse),
+        totalSolvedQuestions: getTotalSolvedQuestions(
+          student.solvedQuestionsByCourse,
+          student.solvedQuestionsByTopic,
+        ),
         weeklySolvedQuestions: getTotalSolvedQuestions(
           student.weeklySolvedQuestionsByCourse,
+          student.weeklySolvedQuestionsByTopic,
         ),
         mockExamCount: mockExams.length,
         latestMockExamNet: getLatestMockExamNet(mockExams),
