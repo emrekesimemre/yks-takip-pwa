@@ -66,7 +66,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className={`${inter.variable} font-sans antialiased overflow-x-hidden`}>
+      <body
+        className={`${inter.variable} font-sans antialiased overflow-x-hidden`}
+        suppressHydrationWarning
+      >
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
