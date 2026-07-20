@@ -17,7 +17,7 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
   const isStudentPage = pathname.startsWith("/dashboard/student/");
 
   return (
-    <header className="glass-header sticky top-0 z-40">
+    <header className="glass-header sticky top-0 z-40 print:hidden">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 min-w-0">
         <Link
           href="/dashboard"
@@ -36,7 +36,7 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
           </div>
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <PanelSwitcher
             isAdmin={isAdmin}
             isTeacher={isTeacher}

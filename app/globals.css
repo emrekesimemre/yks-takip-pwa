@@ -236,4 +236,9 @@ body {
     size: A4;
     margin: 1.5cm;
   }
+
+  .recharts-wrapper,
+  .recharts-surface {
+    overflow: visible !important;
+  }
 }

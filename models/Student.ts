@@ -40,6 +40,9 @@ const StudentSchema = new Schema(
   { timestamps: true },
 );
 
+StudentSchema.set("toJSON", { flattenMaps: true });
+StudentSchema.set("toObject", { flattenMaps: true });
+
 // HMR sırasında eski şema cache'lenmesin — yeni alanlar kaybolmasın
 if (models.Student) {
   delete models.Student;

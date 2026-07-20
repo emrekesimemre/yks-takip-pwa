@@ -57,6 +57,39 @@ export function getOverallProgress(topics: TopicProgress[]): number {
   return Math.round((completed / all.length) * 100);
 }
 
+export function getExamProgress(
+  exam: ExamType,
+  topics: TopicProgress[],
+): { completed: number; total: number; percentage: number } {
+  const examTopics = getAllTopics().filter((t) => t.exam === exam);
+  const total = examTopics.length;
+  const completed = examTopics.filter((t) =>
+    isTopicCompleted(t.id, topics),
+  ).length;
+  return {
+    completed,
+    total,
+    percentage: total === 0 ? 0 : Math.round((completed / total) * 100),
+  };
+}
+
+export type CourseProgressItem = {
+  course: string;
+  completed: number;
+  total: number;
+  percentage: number;
+};
+
+export function getCourseProgressList(
+  exam: ExamType,
+  topics: TopicProgress[],
+): CourseProgressItem[] {
+  return Object.keys(masterCurriculum[exam]).map((course) => ({
+    course,
+    ...getCourseProgress(exam, course, topics),
+  }));
+}
+
 export function getIncompleteTopics(topics: TopicProgress[]): TopicMeta[] {
   return getAllTopics().filter((t) => !isTopicCompleted(t.id, topics));
 }

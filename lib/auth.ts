@@ -1,5 +1,8 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { ensureNextAuthUrl } from "@/lib/nextauth-url";
+
+ensureNextAuthUrl();
 
 function parseEmailList(value: string | undefined): string[] {
   return (value ?? "")

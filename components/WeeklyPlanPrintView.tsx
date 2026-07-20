@@ -3,11 +3,13 @@ import { getTopicMeta } from "@/utils/curriculum";
 type Props = {
   studentName: string;
   weeklySelectedTopics: string[];
+  printVisible?: boolean;
 };
 
 export default function WeeklyPlanPrintView({
   studentName,
   weeklySelectedTopics,
+  printVisible = false,
 }: Props) {
   const selectedTopics = weeklySelectedTopics
     .map((id) => getTopicMeta(id))
@@ -24,7 +26,7 @@ export default function WeeklyPlanPrintView({
   }, {});
 
   return (
-    <div className="hidden print:block">
+    <div className={printVisible ? "hidden print:block" : "hidden"}>
       <div className="p-8">
         <h1 className="text-2xl font-bold text-black mb-1">
           Haftalık Çalışma Programı

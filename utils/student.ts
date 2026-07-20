@@ -1,5 +1,8 @@
 import { getAllTopics } from "@/utils/curriculum";
-import type { CourseSolvedQuestions, TopicProgress } from "@/store/useStudentStore";
+import type {
+  CourseSolvedQuestions,
+  TopicProgress,
+} from "@/store/useStudentStore";
 
 /** DB'deki konu listesini güncel müfredatla birleştirir (eksik ID'ler tamamlanır). */
 export function normalizeTopics(

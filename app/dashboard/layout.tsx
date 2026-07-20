@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions, isAdminEmail, isTeacherEmail } from "@/lib/auth";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 
 export default async function DashboardLayout({
   children,
@@ -23,15 +24,16 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen app-bg overflow-x-hidden">
+    <div className="min-h-screen app-bg overflow-x-hidden flex flex-col">
       <AppHeader
         userName={session.user?.name}
         isAdmin={isAdmin}
         isTeacher={isTeacher}
       />
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-8 print:p-0 print:max-w-none w-full min-w-0">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-8 print:p-0 print:max-w-none w-full min-w-0 flex-1">
         {children}
       </main>
+      <AppFooter />
     </div>
   );
 }

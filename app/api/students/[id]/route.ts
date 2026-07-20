@@ -30,7 +30,9 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(student.toObject(), { status: 200 });
+    return NextResponse.json(student.toObject({ flattenMaps: true }), {
+      status: 200,
+    });
   } catch {
     return NextResponse.json(
       { error: "Öğrenci bilgileri alınırken hata oluştu." },
@@ -105,7 +107,9 @@ export async function PATCH(
       );
     }
 
-    return NextResponse.json(student.toObject(), { status: 200 });
+    return NextResponse.json(student.toObject({ flattenMaps: true }), {
+      status: 200,
+    });
   } catch {
     return NextResponse.json(
       { error: "Öğrenci güncellenirken hata oluştu." },

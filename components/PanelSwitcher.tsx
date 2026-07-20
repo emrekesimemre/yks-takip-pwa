@@ -13,9 +13,9 @@ export default function PanelSwitcher({ isAdmin, isTeacher, active }: Props) {
     return (
       <Link
         href="/admin"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-700 bg-violet-50 px-3 py-1.5 rounded-lg"
+        className="inline-flex items-center gap-2 text-sm sm:text-base font-medium text-violet-700 bg-violet-50 px-4 py-2.5 rounded-lg"
       >
-        <FiShield />
+        <FiShield className="text-lg" />
         Yönetici
       </Link>
     );
@@ -24,38 +24,38 @@ export default function PanelSwitcher({ isAdmin, isTeacher, active }: Props) {
     return (
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg"
+        className="inline-flex items-center gap-2 text-sm sm:text-base font-medium text-blue-700 bg-blue-50 px-4 py-2.5 rounded-lg"
       >
-        <FiBookOpen />
+        <FiBookOpen className="text-lg" />
         Öğretmen
       </Link>
     );
   }
 
   return (
-    <div className="inline-flex items-center p-0.5 sm:p-1 bg-slate-100 rounded-lg max-w-full">
+    <div className="inline-flex items-center p-1 sm:p-1.5 bg-slate-100 rounded-xl max-w-full">
       <Link
         href="/admin"
         title="Yönetici Paneli"
-        className={`inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1.5 rounded-md transition-colors ${
+        className={`inline-flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base font-semibold px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-colors ${
           active === "admin"
             ? "bg-white text-violet-700 shadow-sm"
             : "text-slate-500 hover:text-violet-600"
         }`}
       >
-        <FiShield className="shrink-0 text-base" />
+        <FiShield className="shrink-0 text-lg sm:text-xl" />
         <span className="hidden min-[420px]:inline">Yönetici</span>
       </Link>
       <Link
         href="/dashboard"
         title="Öğretmen Paneli"
-        className={`inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1.5 rounded-md transition-colors ${
+        className={`inline-flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base font-semibold px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-colors ${
           active === "teacher"
             ? "bg-white text-blue-700 shadow-sm"
             : "text-slate-500 hover:text-blue-600"
         }`}
       >
-        <FiBookOpen className="shrink-0 text-base" />
+        <FiBookOpen className="shrink-0 text-lg sm:text-xl" />
         <span className="hidden min-[420px]:inline">Öğretmen</span>
       </Link>
     </div>

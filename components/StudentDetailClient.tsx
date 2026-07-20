@@ -13,6 +13,7 @@ import Link from "next/link";
 import GeneralProgressTab from "@/components/GeneralProgressTab";
 import WeeklyPlanTab from "@/components/WeeklyPlanTab";
 import WeeklyPlanPrintView from "@/components/WeeklyPlanPrintView";
+import DevelopmentReportModal from "@/components/DevelopmentReportModal";
 import MockExamTab from "@/components/MockExamTab";
 import ConfirmModal from "@/components/ConfirmModal";
 import AlertModal from "@/components/AlertModal";
@@ -30,6 +31,7 @@ import {
   FiBook,
   FiCalendar,
   FiBarChart2,
+  FiFileText,
 } from "react-icons/fi";
 
 type MainTab = "progress" | "weekly" | "exams";
@@ -53,8 +55,13 @@ export default function StudentDetailClient({
 }: {
   studentId: string;
 }) {
-  const { currentStudent, setCurrentStudent, updateCurrentStudent, setEditingStudent, removeStudent } =
-    useStudentStore();
+  const {
+    currentStudent,
+    setCurrentStudent,
+    updateCurrentStudent,
+    setEditingStudent,
+    removeStudent,
+  } = useStudentStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<MainTab>("progress");
@@ -62,7 +69,15 @@ export default function StudentDetailClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showDevelopmentReport, setShowDevelopmentReport] = useState(false);
+  const [isPrintingWeekly, setIsPrintingWeekly] = useState(false);
   const saveVersionRef = useRef(0);
+
+  useEffect(() => {
+    const resetWeeklyPrint = () => setIsPrintingWeekly(false);
+    window.addEventListener("afterprint", resetWeeklyPrint);
+    return () => window.removeEventListener("afterprint", resetWeeklyPrint);
+  }, []);
 
   useEffect(() => {
     const fetchStudentDetail = async () => {
@@ -252,8 +267,11 @@ export default function StudentDetailClient({
     [updateCurrentStudent, persistUpdate],
   );
 
-  const handlePrint = () => {
-    window.print();
+  const handleWeeklyPrint = () => {
+    setIsPrintingWeekly(true);
+    requestAnimationFrame(() => {
+      window.print();
+    });
   };
 
   const handleDeleteStudent = async () => {
@@ -310,7 +328,8 @@ export default function StudentDetailClient({
   const mockExams = currentStudent.mockExams ?? [];
 
   const circumference = 2 * Math.PI * 42;
-  const strokeDashoffset = circumference - (overallProgress / 100) * circumference;
+  const strokeDashoffset =
+    circumference - (overallProgress / 100) * circumference;
 
   return (
     <PageTransition>
@@ -370,7 +389,13 @@ export default function StudentDetailClient({
                     transition={{ duration: 1, ease: "easeOut" }}
                   />
                   <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient
+                      id="progressGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="0%"
+                    >
                       <stop offset="0%" stopColor="#2563eb" />
                       <stop offset="100%" stopColor="#6366f1" />
                     </linearGradient>
@@ -396,7 +421,14 @@ export default function StudentDetailClient({
                     Kaydediliyor...
                   </motion.span>
                 )}
-                <div className="flex items-center justify-center gap-1 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowDevelopmentReport(true)}
+                    className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                  >
+                    <FiFileText />
+                    Gelişim Raporu (PDF)
+                  </button>
                   <button
                     onClick={() => setEditingStudent(currentStudent)}
                     className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors font-medium"
@@ -433,7 +465,11 @@ export default function StudentDetailClient({
                 <Icon className="text-base" />
                 <span className="hidden sm:inline">{label}</span>
                 <span className="sm:hidden">
-                  {id === "progress" ? "İlerleme" : id === "weekly" ? "Plan" : "Deneme"}
+                  {id === "progress"
+                    ? "İlerleme"
+                    : id === "weekly"
+                      ? "Plan"
+                      : "Deneme"}
                 </span>
                 {activeTab === id && (
                   <motion.div
@@ -468,8 +504,10 @@ export default function StudentDetailClient({
                     weeklySelectedTopics={weeklySelected}
                     weeklySolvedQuestionsByCourse={weeklySolvedQuestions}
                     onToggleWeeklySelection={handleToggleWeeklySelection}
-                    onUpdateWeeklySolvedQuestions={handleUpdateWeeklySolvedQuestions}
-                    onPrint={handlePrint}
+                    onUpdateWeeklySolvedQuestions={
+                      handleUpdateWeeklySolvedQuestions
+                    }
+                    onPrint={handleWeeklyPrint}
                   />
                 ) : (
                   <MockExamTab
@@ -488,6 +526,16 @@ export default function StudentDetailClient({
       <WeeklyPlanPrintView
         studentName={currentStudent.name}
         weeklySelectedTopics={weeklySelected}
+        printVisible={isPrintingWeekly}
+      />
+
+      <DevelopmentReportModal
+        isOpen={showDevelopmentReport}
+        onClose={() => setShowDevelopmentReport(false)}
+        studentName={currentStudent.name}
+        target={currentStudent.target}
+        topics={currentStudent.topics}
+        solvedQuestionsByCourse={solvedQuestions}
       />
 
       <AddStudentModal />

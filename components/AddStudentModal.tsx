@@ -142,12 +142,8 @@ function StudentForm({
 }
 
 export default function AddStudentModal() {
-  const {
-    isAddModalOpen,
-    editingStudent,
-    setAddModalOpen,
-    setEditingStudent,
-  } = useStudentStore();
+  const { isAddModalOpen, editingStudent, setAddModalOpen, setEditingStudent } =
+    useStudentStore();
 
   const isEditMode = editingStudent !== null;
   const isOpen = isAddModalOpen || isEditMode;
