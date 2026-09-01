@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useStudentStore } from "@/store/useStudentStore";
 import AddStudentModal from "./AddStudentModal";
 import ConfirmModal from "@/components/ConfirmModal";
-import AlertModal from "@/components/AlertModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
 import Link from "next/link";
@@ -33,7 +33,6 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -64,14 +63,15 @@ export default function DashboardClient() {
       if (res.ok) {
         removeStudent(deleteTarget.id);
         setDeleteTarget(null);
+        toast.success("Öğrenci silindi.");
       } else {
-        setErrorMessage("Öğrenci silinemedi. Lütfen tekrar deneyin.");
         setDeleteTarget(null);
+        toast.error("Öğrenci silinemedi. Lütfen tekrar deneyin.");
       }
     } catch (error) {
       console.error("Öğrenci silinemedi:", error);
-      setErrorMessage("Öğrenci silinemedi. Lütfen tekrar deneyin.");
       setDeleteTarget(null);
+      toast.error("Öğrenci silinemedi. Lütfen tekrar deneyin.");
     } finally {
       setIsDeleting(false);
     }
@@ -137,27 +137,51 @@ export default function DashboardClient() {
             const progress = getOverallProgress(student.topics ?? []);
             return (
               <motion.div key={student._id} variants={item}>
-                <div className="card-premium group relative h-full overflow-hidden">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="card-premium group h-full overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Üst satır: avatar + ilerleme + butonlar */}
+                  <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-lg font-bold text-blue-700 shrink-0">
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0" />
+                    <div className="text-right shrink-0">
+                      <div className="text-xs text-slate-400 font-medium">İlerleme</div>
+                      <div className="text-lg font-bold text-blue-600">%{progress}</div>
+                    </div>
+                    <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditingStudent(student);
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        aria-label="Öğrenciyi düzenle"
+                        title="Öğrenciyi düzenle"
+                      >
+                        <FiEdit2 className="text-base" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDeleteTarget({ id: student._id!, name: student.name });
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        aria-label="Öğrenciyi sil"
+                        title="Öğrenciyi sil"
+                      >
+                        <FiTrash2 className="text-base" />
+                      </button>
+                    </div>
+                  </div>
 
                   <Link
                     href={`/dashboard/student/${student._id}`}
-                    className="block p-5 pr-14"
+                    className="block px-5 pb-5"
                   >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-lg font-bold text-blue-700 shrink-0">
-                        {student.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-xs text-slate-400 font-medium">
-                          İlerleme
-                        </div>
-                        <div className="text-lg font-bold text-blue-600">
-                          %{progress}
-                        </div>
-                      </div>
-                    </div>
-
                     <h3 className="font-semibold text-lg text-slate-800 group-hover:text-blue-700 transition-colors">
                       {student.name}
                     </h3>
@@ -178,33 +202,6 @@ export default function DashboardClient() {
                       <FiArrowRight className="ml-1 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </Link>
-
-                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setEditingStudent(student);
-                      }}
-                      className="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                      aria-label="Öğrenciyi düzenle"
-                      title="Öğrenciyi düzenle"
-                    >
-                      <FiEdit2 className="text-base" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeleteTarget({ id: student._id!, name: student.name });
-                      }}
-                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      aria-label="Öğrenciyi sil"
-                      title="Öğrenciyi sil"
-                    >
-                      <FiTrash2 className="text-base" />
-                    </button>
-                  </div>
                 </div>
               </motion.div>
             );
@@ -229,12 +226,6 @@ export default function DashboardClient() {
         onCancel={() => !isDeleting && setDeleteTarget(null)}
       />
 
-      <AlertModal
-        isOpen={errorMessage !== null}
-        title="Hata"
-        message={errorMessage ?? ""}
-        onClose={() => setErrorMessage(null)}
-      />
     </PageTransition>
   );
 }

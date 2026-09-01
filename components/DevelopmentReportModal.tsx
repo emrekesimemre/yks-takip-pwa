@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import type { CourseSolvedQuestions, TopicProgress } from "@/store/useStudentStore";
+import type { CourseSolvedQuestions, MockExam, TopicProgress } from "@/store/useStudentStore";
 import DevelopmentReportView from "@/components/DevelopmentReportView";
 import { FiPrinter, FiX } from "react-icons/fi";
 
@@ -14,6 +14,7 @@ type Props = {
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
+  mockExams?: MockExam[];
 };
 
 export default function DevelopmentReportModal({
@@ -24,6 +25,7 @@ export default function DevelopmentReportModal({
   topics,
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
+  mockExams = [],
 }: Props) {
   useEffect(() => {
     if (!isOpen) return;
@@ -93,6 +95,7 @@ export default function DevelopmentReportModal({
           topics={topics}
           solvedQuestionsByCourse={solvedQuestionsByCourse}
           solvedQuestionsByTopic={solvedQuestionsByTopic}
+          mockExams={mockExams}
         />
       </motion.div>
     </div>

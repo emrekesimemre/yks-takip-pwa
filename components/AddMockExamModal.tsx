@@ -55,6 +55,7 @@ function MockExamForm({ exam, onClose, onSave }: FormProps) {
   const [courses, setCourses] = useState<MockExamCourseResult[]>(
     initial.courses,
   );
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleTypeChange = (newType: DenemeExamType) => {
     setType(newType);
@@ -66,16 +67,42 @@ function MockExamForm({ exam, onClose, onSave }: FormProps) {
     field: keyof MockExamCourseResult,
     value: number,
   ) => {
+    setValidationError(null);
+    const def = denemeCoursesByType[type].find((d) => d.key === courseKey);
+    const maxQ = def?.maxQuestions ?? 999;
+
     setCourses((prev) =>
-      prev.map((c) =>
-        c.courseKey === courseKey ? { ...c, [field]: Math.max(0, value) } : c,
-      ),
+      prev.map((c) => {
+        if (c.courseKey !== courseKey) return c;
+        const updated = { ...c, [field]: Math.max(0, value) };
+        const total = updated.correct + updated.wrong + updated.empty;
+        if (total > maxQ) {
+          setValidationError(
+            `${def?.name ?? courseKey}: Doğru + Yanlış + Boş toplamı maksimum soru sayısını (${maxQ}) aşamaz.`,
+          );
+          return c;
+        }
+        return updated;
+      }),
     );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    const courseDefs = denemeCoursesByType[type];
+    const overLimit = courses.find((c) => {
+      const def = courseDefs.find((d) => d.key === c.courseKey);
+      return def && c.correct + c.wrong + c.empty > def.maxQuestions;
+    });
+    if (overLimit) {
+      const def = courseDefs.find((d) => d.key === overLimit.courseKey);
+      setValidationError(
+        `${def?.name ?? overLimit.courseKey}: Doğru + Yanlış + Boş toplamı maksimum soru sayısını (${def?.maxQuestions}) aşamaz.`,
+      );
+      return;
+    }
 
     const filledCourses = courses.filter(
       (c) => c.correct + c.wrong + c.empty > 0,
@@ -234,6 +261,12 @@ function MockExamForm({ exam, onClose, onSave }: FormProps) {
             })}
           </div>
         </div>
+
+        {validationError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-medium">
+            {validationError}
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
           <p className="text-sm text-slate-500">

@@ -10,13 +10,13 @@ import {
   type MockExam,
 } from "@/store/useStudentStore";
 import Link from "next/link";
+import { toast } from "sonner";
 import GeneralProgressTab from "@/components/GeneralProgressTab";
 import WeeklyPlanTab from "@/components/WeeklyPlanTab";
 import WeeklyPlanPrintView from "@/components/WeeklyPlanPrintView";
 import DevelopmentReportModal from "@/components/DevelopmentReportModal";
 import MockExamTab from "@/components/MockExamTab";
 import ConfirmModal from "@/components/ConfirmModal";
-import AlertModal from "@/components/AlertModal";
 import AddStudentModal from "@/components/AddStudentModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -70,7 +70,7 @@ export default function StudentDetailClient({
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDevelopmentReport, setShowDevelopmentReport] = useState(false);
   const [isPrintingWeekly, setIsPrintingWeekly] = useState(false);
   const saveVersionRef = useRef(0);
@@ -169,6 +169,9 @@ export default function StudentDetailClient({
         }
       } catch (error) {
         console.error("Güncelleme başarısız:", error);
+        if (version === saveVersionRef.current) {
+          toast.error("Değişiklikler kaydedilemedi. Lütfen tekrar deneyin.");
+        }
       } finally {
         if (version === saveVersionRef.current) {
           setIsSaving(false);
@@ -318,6 +321,17 @@ export default function StudentDetailClient({
     [updateCurrentStudent, persistUpdate],
   );
 
+  const handleResetWeeklyPlan = useCallback(async () => {
+    const updates: PersistPayload = {
+      weeklySelectedTopics: [],
+      weeklySolvedQuestionsByCourse: {},
+      weeklySolvedQuestionsByTopic: {},
+    };
+    updateCurrentStudent(updates);
+    await persistUpdate(updates);
+    toast.success("Haftalık plan sıfırlandı.");
+  }, [updateCurrentStudent, persistUpdate]);
+
   const handleWeeklyPrint = () => {
     setIsPrintingWeekly(true);
     requestAnimationFrame(() => {
@@ -339,12 +353,12 @@ export default function StudentDetailClient({
         router.push("/dashboard");
       } else {
         setShowDeleteConfirm(false);
-        setErrorMessage("Öğrenci silinemedi. Lütfen tekrar deneyin.");
+        toast.error("Öğrenci silinemedi. Lütfen tekrar deneyin.");
       }
     } catch (error) {
       console.error("Öğrenci silinemedi:", error);
       setShowDeleteConfirm(false);
-      setErrorMessage("Öğrenci silinemedi. Lütfen tekrar deneyin.");
+      toast.error("Öğrenci silinemedi. Lütfen tekrar deneyin.");
     } finally {
       setIsDeleting(false);
     }
@@ -568,6 +582,7 @@ export default function StudentDetailClient({
                       handleUpdateWeeklyTopicSolvedQuestions
                     }
                     onPrint={handleWeeklyPrint}
+                    onResetWeeklyPlan={() => setShowResetConfirm(true)}
                   />
                 ) : (
                   <MockExamTab
@@ -586,6 +601,8 @@ export default function StudentDetailClient({
       <WeeklyPlanPrintView
         studentName={currentStudent.name}
         weeklySelectedTopics={weeklySelected}
+        weeklySolvedQuestionsByCourse={weeklySolvedQuestions}
+        weeklySolvedQuestionsByTopic={weeklySolvedQuestionsByTopic}
         printVisible={isPrintingWeekly}
       />
 
@@ -597,6 +614,7 @@ export default function StudentDetailClient({
         topics={currentStudent.topics}
         solvedQuestionsByCourse={solvedQuestions}
         solvedQuestionsByTopic={solvedQuestionsByTopic}
+        mockExams={mockExams}
       />
 
       <AddStudentModal />
@@ -612,11 +630,17 @@ export default function StudentDetailClient({
         onCancel={() => !isDeleting && setShowDeleteConfirm(false)}
       />
 
-      <AlertModal
-        isOpen={errorMessage !== null}
-        title="Hata"
-        message={errorMessage ?? ""}
-        onClose={() => setErrorMessage(null)}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        title="Haftayı Sıfırla"
+        message="Bu haftanın konu seçimleri ve soru sayıları sıfırlanacak. Bu işlem geri alınamaz."
+        confirmLabel="Sıfırla"
+        variant="danger"
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          handleResetWeeklyPlan();
+        }}
+        onCancel={() => setShowResetConfirm(false)}
       />
     </PageTransition>
   );

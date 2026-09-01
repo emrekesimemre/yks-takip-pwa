@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { FiX } from "react-icons/fi";
+import { toast } from "sonner";
 import { useStudentStore, type Student } from "@/store/useStudentStore";
-import AlertModal from "@/components/AlertModal";
 import AnimatedModal from "@/components/ui/AnimatedModal";
 
 type StudentFormProps = {
@@ -25,7 +25,6 @@ function StudentForm({
   const [name, setName] = useState(initialName);
   const [target, setTarget] = useState(initialTarget);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +47,7 @@ function StudentForm({
           name: savedStudent.name,
           target: savedStudent.target ?? "",
         });
+        toast.success("Öğrenci güncellendi.");
       } else {
         const res = await fetch("/api/students", {
           method: "POST",
@@ -59,6 +59,7 @@ function StudentForm({
 
         const savedStudent = await res.json();
         addStudent(savedStudent);
+        toast.success("Öğrenci eklendi.");
       }
 
       onClose();
@@ -67,7 +68,7 @@ function StudentForm({
         isEditMode ? "Öğrenci güncellenemedi:" : "Öğrenci eklenemedi:",
         error,
       );
-      setErrorMessage("Bir hata oluştu, lütfen tekrar deneyin.");
+      toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
     } finally {
       setIsSubmitting(false);
     }
@@ -131,12 +132,6 @@ function StudentForm({
         </div>
       </form>
 
-      <AlertModal
-        isOpen={errorMessage !== null}
-        title="Hata"
-        message={errorMessage ?? ""}
-        onClose={() => setErrorMessage(null)}
-      />
     </>
   );
 }

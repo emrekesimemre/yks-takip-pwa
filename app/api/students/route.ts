@@ -5,11 +5,17 @@ import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
 import { masterCurriculum } from "@/data/subjects";
 
-// Oturum kontrolü yardımcı fonksiyonu
+class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
+}
+
 async function checkAuth() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
   return session.user.email;
 }
@@ -49,7 +55,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(newStudent, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Öğrenci eklenirken hata oluştu." },
       { status: 500 },
@@ -68,7 +77,10 @@ export async function GET() {
       createdAt: -1,
     });
     return NextResponse.json(students, { status: 200 });
-  } catch {
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Öğrenciler getirilemedi." },
       { status: 500 },

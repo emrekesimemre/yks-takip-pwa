@@ -7,6 +7,7 @@ import type {
 } from "@/store/useStudentStore";
 import {
   getCourseSolvedCount,
+  getCourseTopicSolvedSum,
   getIncompleteTopics,
   getTopicMeta,
   getTopicSolvedCount,
@@ -14,7 +15,7 @@ import {
 import { getPacingWarnings } from "@/utils/pacing";
 import PacingAlert from "@/components/PacingAlert";
 import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput";
-import { FiPrinter, FiCheckCircle } from "react-icons/fi";
+import { FiPrinter, FiCheckCircle, FiRotateCcw } from "react-icons/fi";
 
 type Props = {
   topics: TopicProgress[];
@@ -29,6 +30,7 @@ type Props = {
   ) => void;
   onUpdateWeeklyTopicSolvedQuestions: (topicId: string, count: number) => void;
   onPrint: () => void;
+  onResetWeeklyPlan: () => void;
 };
 
 export default function WeeklyPlanTab({
@@ -40,6 +42,7 @@ export default function WeeklyPlanTab({
   onUpdateWeeklySolvedQuestions,
   onUpdateWeeklyTopicSolvedQuestions,
   onPrint,
+  onResetWeeklyPlan,
 }: Props) {
   const incompleteTopics = getIncompleteTopics(topics);
   const warnings = getPacingWarnings(topics, weeklySelectedTopics);
@@ -65,16 +68,33 @@ export default function WeeklyPlanTab({
             programa eklenir.
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onPrint}
-          disabled={weeklySelectedTopics.length === 0}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
-        >
-          <FiPrinter />
-          PDF / Yazdır
-        </motion.button>
+        <div className="flex items-center gap-2 shrink-0">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onResetWeeklyPlan}
+            disabled={
+              weeklySelectedTopics.length === 0 &&
+              Object.keys(weeklySolvedQuestionsByCourse).length === 0 &&
+              Object.keys(weeklySolvedQuestionsByTopic).length === 0
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 text-sm font-semibold rounded-xl hover:bg-red-50 hover:text-red-600 border border-slate-200 hover:border-red-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+            title="Bu haftanın seçimlerini ve soru sayılarını sıfırla"
+          >
+            <FiRotateCcw />
+            Haftayı Sıfırla
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onPrint}
+            disabled={weeklySelectedTopics.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+          >
+            <FiPrinter />
+            PDF / Yazdır
+          </motion.button>
+        </div>
       </div>
 
       <PacingAlert warnings={warnings} />
@@ -114,9 +134,18 @@ export default function WeeklyPlanTab({
                   <CourseSolvedQuestionsInput
                     label="Bu hafta çözülecek soru sayısı"
                     value={weeklySolved}
-                    onChange={(count) =>
-                      onUpdateWeeklySolvedQuestions(exam, course, count)
-                    }
+                    onChange={(count) => {
+                      const topicSum = getCourseTopicSolvedSum(
+                        weeklySolvedQuestionsByTopic,
+                        exam,
+                        course,
+                      );
+                      onUpdateWeeklySolvedQuestions(
+                        exam,
+                        course,
+                        Math.max(0, count - topicSum),
+                      );
+                    }}
                   />
                 </div>
                 <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
