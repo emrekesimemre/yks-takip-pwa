@@ -7,6 +7,7 @@ import { consumeRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   createStaff,
   deleteStaff,
+  isBootstrapAdminEmail,
   listStaff,
   normalizeEmail,
   StaffError,
@@ -21,10 +22,18 @@ function staffErrorResponse(error: unknown) {
   return jsonError("Personel işlemi başarısız.", 500);
 }
 
+function staffManagerForbidden() {
+  return jsonError(
+    "Personel ekleme, silme ve yetki değişikliği yalnızca ortam ayarındaki yöneticiye açıktır.",
+    403,
+  );
+}
+
 export async function GET() {
   try {
     const auth = await requireAdminSession();
     if (!auth.ok) return auth.response;
+    if (!isBootstrapAdminEmail(auth.email)) return staffManagerForbidden();
 
     const staff = await listStaff();
     return NextResponse.json({ staff, currentEmail: auth.email });
@@ -37,6 +46,7 @@ export async function POST(req: Request) {
   try {
     const auth = await requireAdminSession();
     if (!auth.ok) return auth.response;
+    if (!isBootstrapAdminEmail(auth.email)) return staffManagerForbidden();
 
     const limited = consumeRateLimit(
       `staff-invite:${auth.email}:${clientIp(req)}`,
@@ -49,7 +59,7 @@ export async function POST(req: Request) {
     if (!parsedBody.ok) return parsedBody.response;
     const body = parsedBody.data as { email?: unknown; roles?: unknown };
 
-    await createStaff(body.email, body.roles);
+    await createStaff(auth.email, body.email, body.roles);
     const staff = await listStaff();
     const invitedEmail = normalizeEmail(body.email);
     const created = staff.find((member) => member.email === invitedEmail);
@@ -80,6 +90,7 @@ export async function PATCH(req: Request) {
   try {
     const auth = await requireAdminSession();
     if (!auth.ok) return auth.response;
+    if (!isBootstrapAdminEmail(auth.email)) return staffManagerForbidden();
 
     const limited = consumeRateLimit(
       `staff-update:${auth.email}:${clientIp(req)}`,
@@ -124,6 +135,7 @@ export async function DELETE(req: Request) {
   try {
     const auth = await requireAdminSession();
     if (!auth.ok) return auth.response;
+    if (!isBootstrapAdminEmail(auth.email)) return staffManagerForbidden();
 
     const parsedBody = await readJsonBody(req);
     if (!parsedBody.ok) return parsedBody.response;

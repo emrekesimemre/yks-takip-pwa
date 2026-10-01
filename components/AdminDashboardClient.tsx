@@ -41,13 +41,14 @@ type OverviewResponse = {
     averageProgress: number;
     truncated?: boolean;
   };
+  teachers: string[];
   students: StudentOverview[];
 };
 
 const tabs: { id: AdminTab; label: string; shortLabel: string; icon: typeof FiUsers }[] = [
   { id: "overview", label: "Genel Durum", shortLabel: "Genel", icon: FiUsers },
   { id: "exams", label: "Deneme", shortLabel: "Deneme", icon: FiBarChart2 },
-  { id: "staff", label: "Personel", shortLabel: "Yetki", icon: FiShield },
+  { id: "staff", label: "Personel", shortLabel: "Personel", icon: FiShield },
 ];
 
 const tabDescriptions: Record<AdminTab, string> = {
@@ -80,8 +81,15 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
-export default function AdminDashboardClient() {
+type AdminDashboardClientProps = {
+  canManageStaff: boolean;
+};
+
+export default function AdminDashboardClient({
+  canManageStaff,
+}: Readonly<AdminDashboardClientProps>) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const visibleTabs = canManageStaff ? tabs : tabs.filter((tab) => tab.id !== "staff");
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -106,7 +114,11 @@ export default function AdminDashboardClient() {
 
   const teachers = useMemo(() => {
     if (!data) return [];
-    return [...new Set(data.students.map((s) => s.teacherEmail))].sort();
+    const emails = new Set(data.teachers);
+    for (const student of data.students) {
+      if (student.teacherEmail) emails.add(student.teacherEmail);
+    }
+    return [...emails].sort((a, b) => a.localeCompare(b, "tr"));
   }, [data]);
 
   const teacherOptions = useMemo(() => {
@@ -161,7 +173,7 @@ export default function AdminDashboardClient() {
 
       <div className="card-premium overflow-hidden">
         <div className="relative flex border-b border-slate-100">
-          {tabs.map(({ id, label, shortLabel, icon: Icon }) => (
+          {visibleTabs.map(({ id, label, shortLabel, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -217,7 +229,7 @@ export default function AdminDashboardClient() {
                 formatTeacherLabel={formatTeacherLabel}
               />
             )}
-            {activeTab === "staff" && <AdminStaffPanel />}
+            {canManageStaff && activeTab === "staff" && <AdminStaffPanel />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -263,6 +275,13 @@ function OverviewTabContent({
   }
 
   const { summary } = data;
+  const selectedTeacherIsEmpty =
+    teacherFilter !== "all" &&
+    search.trim().length === 0 &&
+    filteredStudents.length === 0;
+  const groupsToShow: [string, StudentOverview[]][] = selectedTeacherIsEmpty
+    ? [[teacherFilter, []]]
+    : groupedByTeacher;
 
   return (
     <div className="space-y-6">
@@ -339,13 +358,13 @@ function OverviewTabContent({
         </div>
       </div>
 
-      {filteredStudents.length === 0 ? (
+      {groupsToShow.length === 0 ? (
         <div className="card-premium p-12 text-center border border-slate-100">
           <p className="text-slate-600">Gösterilecek öğrenci bulunamadı.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {groupedByTeacher.map(([teacherEmail, students]) => (
+          {groupsToShow.map(([teacherEmail, students]) => (
             <section key={teacherEmail} className="card-premium overflow-hidden border border-slate-100">
               <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -377,7 +396,14 @@ function OverviewTabContent({
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student) => (
+                    {students.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
+                          Bu öğretmenin öğrencisi yok.
+                        </td>
+                      </tr>
+                    ) : (
+                      students.map((student) => (
                       <tr
                         key={student._id}
                         className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
@@ -431,7 +457,8 @@ function OverviewTabContent({
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

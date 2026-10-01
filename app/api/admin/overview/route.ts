@@ -1,6 +1,7 @@
 import { jsonError } from "@/lib/api";
 import { requireAdminSession } from "@/lib/api-auth";
 import connectMongo from "@/lib/mongo";
+import { listTeacherEmails } from "@/lib/staff";
 import Student from "@/models/Student";
 import type { MockExam } from "@/store/useStudentStore";
 import {
@@ -91,7 +92,7 @@ export async function GET() {
       };
     });
 
-    const teacherEmails = [...new Set(overview.map((s) => s.teacherEmail))];
+    const teacherEmails = await listTeacherEmails();
     const averageProgress =
       overview.length === 0
         ? 0
@@ -106,6 +107,7 @@ export async function GET() {
         averageProgress,
         truncated,
       },
+      teachers: teacherEmails,
       students: overview,
     });
   } catch (error) {

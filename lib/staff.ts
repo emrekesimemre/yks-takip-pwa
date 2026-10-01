@@ -85,6 +85,21 @@ function isBootstrapAdmin(email: string, bootstrapAdmins = getBootstrapAdminEmai
   return bootstrapAdmins.includes(email);
 }
 
+export function isBootstrapAdminEmail(email: string | null | undefined) {
+  const normalized = normalizeEmail(email ?? "");
+  if (!normalized) return false;
+  return isBootstrapAdmin(normalized);
+}
+
+function assertBootstrapActor(email: string) {
+  if (!isBootstrapAdmin(email)) {
+    throw new StaffError(
+      "Personel ekleme, silme ve yetki değişikliği yalnızca ortam ayarındaki yöneticiye açıktır.",
+      403,
+    );
+  }
+}
+
 export function countOtherAdmins(
   email: string,
   records: StaffRecord[],
@@ -272,6 +287,14 @@ export async function safeResolveStaffAccess(
   }
 }
 
+export async function listTeacherEmails(): Promise<string[]> {
+  const map = await getRoleMap();
+  return [...map.values()]
+    .filter((record) => record.roles.includes("teacher"))
+    .map((record) => record.email)
+    .sort((a, b) => a.localeCompare(b, "tr"));
+}
+
 export async function listStaff(): Promise<StaffListItem[]> {
   await ensureStaffSeeded();
   await connectMongo();
@@ -289,9 +312,16 @@ export async function listStaff(): Promise<StaffListItem[]> {
     .sort((a, b) => a.email.localeCompare(b.email, "tr"));
 }
 
-export async function createStaff(emailInput: unknown, rolesInput: unknown) {
+export async function createStaff(
+  actorEmailInput: string,
+  emailInput: unknown,
+  rolesInput: unknown,
+) {
+  const actorEmail = normalizeEmail(actorEmailInput);
   const email = normalizeEmail(emailInput);
   const roles = normalizeRoles(rolesInput);
+  if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
+  assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
   if (!roles || roles.length === 0) {
     throw new StaffError("En az bir rol seçin.", 400);
@@ -322,6 +352,7 @@ export async function updateStaffRoles(
   const email = normalizeEmail(emailInput);
   const roles = normalizeRoles(rolesInput);
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
+  assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
   if (!roles) throw new StaffError("Geçersiz rol seçimi.", 400);
 
@@ -353,6 +384,7 @@ export async function deleteStaff(actorEmailInput: string, emailInput: unknown) 
   const actorEmail = normalizeEmail(actorEmailInput);
   const email = normalizeEmail(emailInput);
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
+  assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
 
   await ensureStaffSeeded();
