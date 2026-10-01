@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions, isAdminEmail, isTeacherEmail } from "@/lib/auth";
+import { authOptions } from "@/lib/auth";
+import { safeResolveStaffAccess } from "@/lib/staff";
 import LoginButton from "@/components/LoginButton";
 import HomeAuthActions from "@/components/HomeAuthActions";
 import AppFooter from "@/components/AppFooter";
@@ -8,11 +9,11 @@ import { FiBarChart2, FiCalendar, FiTarget } from "react-icons/fi";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
-  const email = session?.user?.email;
-  const isAdmin = isAdminEmail(email);
-  const isTeacher = isTeacherEmail(email);
+  const access = await safeResolveStaffAccess(session?.user?.email);
+  const isAdmin = access.error ? false : access.isAdmin;
+  const isTeacher = access.error ? false : access.isTeacher;
 
-  if (session && !isAdmin) {
+  if (session && isTeacher && !isAdmin) {
     redirect("/dashboard");
   }
 

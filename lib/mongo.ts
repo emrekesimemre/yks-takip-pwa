@@ -1,12 +1,7 @@
 import mongoose from "mongoose";
+import { getMongodbUri } from "@/lib/env";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Lütfen .env dosyasındaki MONGODB_URI değişkenini tanımlayın.",
-  );
-}
+const MONGODB_URI = getMongodbUri();
 
 type MongooseCache = {
   conn: typeof mongoose | null;
@@ -36,6 +31,9 @@ async function connectMongo() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5_000,
+      socketTimeoutMS: 45_000,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {

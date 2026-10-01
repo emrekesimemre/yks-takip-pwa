@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions, isAdminEmail, isTeacherEmail } from "@/lib/auth";
+import { authOptions } from "@/lib/auth";
+import { safeResolveStaffAccess } from "@/lib/staff";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 
@@ -15,9 +16,12 @@ export default async function DashboardLayout({
     redirect("/");
   }
 
-  const email = session.user?.email;
-  const isTeacher = isTeacherEmail(email);
-  const isAdmin = isAdminEmail(email);
+  const access = await safeResolveStaffAccess(session.user?.email);
+  if (access.error) {
+    throw new Error("Yetki bilgisi alınamadı. Lütfen tekrar deneyin.");
+  }
+
+  const { isTeacher, isAdmin } = access;
 
   if (!isTeacher) {
     redirect(isAdmin ? "/admin" : "/");

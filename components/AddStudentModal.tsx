@@ -11,6 +11,7 @@ type StudentFormProps = {
   editingStudent: Student | null;
   initialName: string;
   initialTarget: string;
+  initialParentEmail: string;
   onClose: () => void;
 };
 
@@ -19,11 +20,13 @@ function StudentForm({
   editingStudent,
   initialName,
   initialTarget,
+  initialParentEmail,
   onClose,
 }: StudentFormProps) {
   const { addStudent, updateStudent } = useStudentStore();
   const [name, setName] = useState(initialName);
   const [target, setTarget] = useState(initialTarget);
+  const [parentEmail, setParentEmail] = useState(initialParentEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,28 +39,36 @@ function StudentForm({
         const res = await fetch(`/api/students/${editingStudent._id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), target: target.trim() }),
+          body: JSON.stringify({
+            name: name.trim(),
+            target: target.trim(),
+            parentEmail: parentEmail.trim(),
+          }),
         });
 
-        if (!res.ok) throw new Error("Güncelleme başarısız");
-
         const savedStudent = await res.json();
+        if (!res.ok)
+          throw new Error(savedStudent.error || "Güncelleme başarısız");
         updateStudent({
           ...editingStudent,
           name: savedStudent.name,
           target: savedStudent.target ?? "",
+          parentEmail: savedStudent.parentEmail ?? "",
         });
         toast.success("Öğrenci güncellendi.");
       } else {
         const res = await fetch("/api/students", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), target: target.trim() }),
+          body: JSON.stringify({
+            name: name.trim(),
+            target: target.trim(),
+            parentEmail: parentEmail.trim(),
+          }),
         });
 
-        if (!res.ok) throw new Error("Kayıt başarısız");
-
         const savedStudent = await res.json();
+        if (!res.ok) throw new Error(savedStudent.error || "Kayıt başarısız");
         addStudent(savedStudent);
         toast.success("Öğrenci eklendi.");
       }
@@ -68,7 +79,11 @@ function StudentForm({
         isEditMode ? "Öğrenci güncellenemedi:" : "Öğrenci eklenemedi:",
         error,
       );
-      toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Bir hata oluştu, lütfen tekrar deneyin.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -113,6 +128,23 @@ function StudentForm({
           />
         </div>
 
+        <div>
+          <label
+            htmlFor="parent-email"
+            className="block text-sm font-semibold text-slate-700 mb-1.5"
+          >
+            Veli e-postası
+          </label>
+          <input
+            id="parent-email"
+            type="email"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+            className="input-premium"
+            placeholder="ornek@gmail.com"
+          />
+        </div>
+
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="button"
@@ -131,7 +163,6 @@ function StudentForm({
           </button>
         </div>
       </form>
-
     </>
   );
 }
@@ -184,6 +215,9 @@ export default function AddStudentModal() {
             editingStudent={editingStudent}
             initialName={isEditMode ? editingStudent.name : ""}
             initialTarget={isEditMode ? (editingStudent.target ?? "") : ""}
+            initialParentEmail={
+              isEditMode ? (editingStudent.parentEmail ?? "") : ""
+            }
             onClose={handleClose}
           />
         )}

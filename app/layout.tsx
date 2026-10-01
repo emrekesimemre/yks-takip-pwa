@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import { Toaster } from "sonner";
+import { getPublicSiteUrl } from "@/lib/nextauth-url";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,6 +17,7 @@ const APP_DESCRIPTION =
   "Üniversite hazırlık öğrencileri için haftalık takip sistemi";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getPublicSiteUrl()),
   applicationName: APP_NAME,
   title: {
     default: APP_TITLE,
@@ -56,7 +58,6 @@ export const viewport: Viewport = {
   themeColor: "#2563eb",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 

@@ -14,9 +14,11 @@ import {
   FiTarget,
   FiBookOpen,
   FiBarChart2,
+  FiShield,
 } from "react-icons/fi";
+import AdminStaffPanel from "@/components/AdminStaffPanel";
 
-type AdminTab = "overview" | "exams";
+type AdminTab = "overview" | "exams" | "staff";
 
 type StudentOverview = {
   _id: string;
@@ -37,18 +39,21 @@ type OverviewResponse = {
     totalStudents: number;
     totalTeachers: number;
     averageProgress: number;
+    truncated?: boolean;
   };
   students: StudentOverview[];
 };
 
-const tabs: { id: AdminTab; label: string; icon: typeof FiUsers }[] = [
-  { id: "overview", label: "Genel Durum", icon: FiUsers },
-  { id: "exams", label: "Deneme", icon: FiBarChart2 },
+const tabs: { id: AdminTab; label: string; shortLabel: string; icon: typeof FiUsers }[] = [
+  { id: "overview", label: "Genel Durum", shortLabel: "Genel", icon: FiUsers },
+  { id: "exams", label: "Deneme", shortLabel: "Deneme", icon: FiBarChart2 },
+  { id: "staff", label: "Personel", shortLabel: "Yetki", icon: FiShield },
 ];
 
 const tabDescriptions: Record<AdminTab, string> = {
   overview: "Tüm öğretmenlerin öğrencilerinin özet durumu",
   exams: "Denemelere göre öğrenci sıralaması ve net karşılaştırması",
+  staff: "Öğretmen ve yönetici hesaplarını buradan ekleyin",
 };
 
 function formatTeacherLabel(email: string): string {
@@ -156,7 +161,7 @@ export default function AdminDashboardClient() {
 
       <div className="card-premium overflow-hidden">
         <div className="relative flex border-b border-slate-100">
-          {tabs.map(({ id, label, icon: Icon }) => (
+          {tabs.map(({ id, label, shortLabel, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -169,7 +174,7 @@ export default function AdminDashboardClient() {
             >
               <Icon className="text-base" />
               <span className="hidden sm:inline">{label}</span>
-              <span className="sm:hidden">{id === "overview" ? "Genel" : "Deneme"}</span>
+              <span className="sm:hidden">{shortLabel}</span>
               {activeTab === id && (
                 <motion.div
                   layoutId="adminActiveTab"
@@ -190,7 +195,7 @@ export default function AdminDashboardClient() {
             transition={{ duration: 0.2 }}
             className="p-4 sm:p-6"
           >
-            {activeTab === "overview" ? (
+            {activeTab === "overview" && (
               <OverviewTabContent
                 data={data}
                 isLoading={isLoading}
@@ -203,7 +208,8 @@ export default function AdminDashboardClient() {
                 groupedByTeacher={groupedByTeacher}
                 formatTeacherLabel={formatTeacherLabel}
               />
-            ) : (
+            )}
+            {activeTab === "exams" && (
               <ExamsTabContent
                 teacherFilter={teacherFilter}
                 teacherOptions={teacherOptions}
@@ -211,6 +217,7 @@ export default function AdminDashboardClient() {
                 formatTeacherLabel={formatTeacherLabel}
               />
             )}
+            {activeTab === "staff" && <AdminStaffPanel />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -259,6 +266,11 @@ function OverviewTabContent({
 
   return (
     <div className="space-y-6">
+      {summary.truncated && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Öğrenci listesi üst limite ulaştığı için kısaltıldı.
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card-premium p-5 border border-slate-100">
           <div className="flex items-center gap-3">

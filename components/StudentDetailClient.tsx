@@ -46,6 +46,45 @@ type PersistPayload = {
   mockExams?: MockExam[];
 };
 
+function mergePersistedFields(
+  updates: PersistPayload,
+  data: PersistPayload,
+): PersistPayload {
+  const merged: PersistPayload = {};
+  if (updates.topics !== undefined) {
+    merged.topics = normalizeTopics(data.topics ?? updates.topics);
+  }
+  if (updates.weeklySelectedTopics !== undefined) {
+    merged.weeklySelectedTopics =
+      data.weeklySelectedTopics ?? updates.weeklySelectedTopics;
+  }
+  if (updates.solvedQuestionsByCourse !== undefined) {
+    merged.solvedQuestionsByCourse = normalizeSolvedQuestions(
+      data.solvedQuestionsByCourse ?? updates.solvedQuestionsByCourse,
+    );
+  }
+  if (updates.solvedQuestionsByTopic !== undefined) {
+    merged.solvedQuestionsByTopic = normalizeSolvedQuestions(
+      data.solvedQuestionsByTopic ?? updates.solvedQuestionsByTopic,
+    );
+  }
+  if (updates.weeklySolvedQuestionsByCourse !== undefined) {
+    merged.weeklySolvedQuestionsByCourse = normalizeSolvedQuestions(
+      data.weeklySolvedQuestionsByCourse ??
+        updates.weeklySolvedQuestionsByCourse,
+    );
+  }
+  if (updates.weeklySolvedQuestionsByTopic !== undefined) {
+    merged.weeklySolvedQuestionsByTopic = normalizeSolvedQuestions(
+      data.weeklySolvedQuestionsByTopic ?? updates.weeklySolvedQuestionsByTopic,
+    );
+  }
+  if (updates.mockExams !== undefined) {
+    merged.mockExams = data.mockExams ?? updates.mockExams;
+  }
+  return merged;
+}
+
 const tabs: { id: MainTab; label: string; icon: typeof FiBook }[] = [
   { id: "progress", label: "Genel İlerleme", icon: FiBook },
   { id: "weekly", label: "Haftalık Plan", icon: FiCalendar },
@@ -54,9 +93,9 @@ const tabs: { id: MainTab; label: string; icon: typeof FiBook }[] = [
 
 export default function StudentDetailClient({
   studentId,
-}: {
+}: Readonly<{
   studentId: string;
-}) {
+}>) {
   const {
     currentStudent,
     setCurrentStudent,
@@ -82,103 +121,114 @@ export default function StudentDetailClient({
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchStudentDetail = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/students/${studentId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setCurrentStudent({
-            ...data,
-            topics: normalizeTopics(data.topics),
-            weeklySelectedTopics: data.weeklySelectedTopics ?? [],
-            solvedQuestionsByCourse: normalizeSolvedQuestions(
-              data.solvedQuestionsByCourse,
-            ),
-            solvedQuestionsByTopic: normalizeSolvedQuestions(
-              data.solvedQuestionsByTopic,
-            ),
-            weeklySolvedQuestionsByCourse: normalizeSolvedQuestions(
-              data.weeklySolvedQuestionsByCourse,
-            ),
-            weeklySolvedQuestionsByTopic: normalizeSolvedQuestions(
-              data.weeklySolvedQuestionsByTopic,
-            ),
-            mockExams: data.mockExams ?? [],
-          });
+        const res = await fetch(`/api/students/${studentId}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          if (res.status !== 404) {
+            toast.error("Öğrenci bilgileri yüklenemedi.");
+          }
+          setCurrentStudent(null);
+          return;
         }
+
+        const data = await res.json();
+        setCurrentStudent({
+          ...data,
+          topics: normalizeTopics(data.topics),
+          weeklySelectedTopics: data.weeklySelectedTopics ?? [],
+          solvedQuestionsByCourse: normalizeSolvedQuestions(
+            data.solvedQuestionsByCourse,
+          ),
+          solvedQuestionsByTopic: normalizeSolvedQuestions(
+            data.solvedQuestionsByTopic,
+          ),
+          weeklySolvedQuestionsByCourse: normalizeSolvedQuestions(
+            data.weeklySolvedQuestionsByCourse,
+          ),
+          weeklySolvedQuestionsByTopic: normalizeSolvedQuestions(
+            data.weeklySolvedQuestionsByTopic,
+          ),
+          mockExams: data.mockExams ?? [],
+        });
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error("Öğrenci detayı çekilemedi:", error);
+        toast.error("Öğrenci bilgileri yüklenemedi.");
+        setCurrentStudent(null);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchStudentDetail();
-    return () => setCurrentStudent(null);
+    void fetchStudentDetail();
+    return () => {
+      controller.abort();
+      setCurrentStudent(null);
+    };
   }, [studentId, setCurrentStudent]);
 
   const persistUpdate = useCallback(
     async (updates: PersistPayload) => {
+      const previous = useStudentStore.getState().currentStudent;
+      if (!previous) return false;
+
+      updateCurrentStudent(updates);
       const version = ++saveVersionRef.current;
       setIsSaving(true);
+
+      const rollback = () => {
+        if (version === saveVersionRef.current) {
+          setCurrentStudent(previous);
+        }
+      };
+
       try {
         const res = await fetch(`/api/students/${studentId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
         });
-        if (res.ok && version === saveVersionRef.current) {
-          const data = await res.json();
-          const merged: PersistPayload = {};
 
-          if (updates.topics !== undefined) {
-            merged.topics = normalizeTopics(data.topics ?? updates.topics);
-          }
-          if (updates.weeklySelectedTopics !== undefined) {
-            merged.weeklySelectedTopics =
-              data.weeklySelectedTopics ?? updates.weeklySelectedTopics;
-          }
-          if (updates.solvedQuestionsByCourse !== undefined) {
-            merged.solvedQuestionsByCourse = normalizeSolvedQuestions(
-              data.solvedQuestionsByCourse ?? updates.solvedQuestionsByCourse,
+        if (!res.ok) {
+          rollback();
+          if (version === saveVersionRef.current) {
+            const body = (await res.json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            toast.error(
+              body?.error || "Değişiklikler kaydedilemedi. Lütfen tekrar deneyin.",
             );
           }
-          if (updates.solvedQuestionsByTopic !== undefined) {
-            merged.solvedQuestionsByTopic = normalizeSolvedQuestions(
-              data.solvedQuestionsByTopic ?? updates.solvedQuestionsByTopic,
-            );
-          }
-          if (updates.weeklySolvedQuestionsByCourse !== undefined) {
-            merged.weeklySolvedQuestionsByCourse = normalizeSolvedQuestions(
-              data.weeklySolvedQuestionsByCourse ??
-                updates.weeklySolvedQuestionsByCourse,
-            );
-          }
-          if (updates.weeklySolvedQuestionsByTopic !== undefined) {
-            merged.weeklySolvedQuestionsByTopic = normalizeSolvedQuestions(
-              data.weeklySolvedQuestionsByTopic ??
-                updates.weeklySolvedQuestionsByTopic,
-            );
-          }
-          if (updates.mockExams !== undefined) {
-            merged.mockExams = data.mockExams ?? updates.mockExams;
-          }
-
-          updateCurrentStudent(merged);
+          return false;
         }
+
+        if (version !== saveVersionRef.current) return true;
+
+        const data = await res.json();
+        updateCurrentStudent(mergePersistedFields(updates, data));
+        return true;
       } catch (error) {
         console.error("Güncelleme başarısız:", error);
+        rollback();
         if (version === saveVersionRef.current) {
           toast.error("Değişiklikler kaydedilemedi. Lütfen tekrar deneyin.");
         }
+        return false;
       } finally {
         if (version === saveVersionRef.current) {
           setIsSaving(false);
         }
       }
     },
-    [studentId, updateCurrentStudent],
+    [studentId, updateCurrentStudent, setCurrentStudent],
   );
 
   const handleToggleCompletion = useCallback(
@@ -193,10 +243,9 @@ export default function StudentDetailClient({
           )
         : [...student.topics, { id: topicId, isCompleted }];
 
-      updateCurrentStudent({ topics: updatedTopics });
-      persistUpdate({ topics: updatedTopics });
+      void persistUpdate({ topics: updatedTopics });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleToggleWeeklySelection = useCallback(
@@ -211,10 +260,9 @@ export default function StudentDetailClient({
           : [...current, topicId]
         : current.filter((id) => id !== topicId);
 
-      updateCurrentStudent({ weeklySelectedTopics: updated });
-      persistUpdate({ weeklySelectedTopics: updated });
+      void persistUpdate({ weeklySelectedTopics: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleUpdateSolvedQuestions = useCallback(
@@ -228,10 +276,9 @@ export default function StudentDetailClient({
         [key]: count,
       };
 
-      updateCurrentStudent({ solvedQuestionsByCourse: updated });
-      persistUpdate({ solvedQuestionsByCourse: updated });
+      void persistUpdate({ solvedQuestionsByCourse: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleUpdateTopicSolvedQuestions = useCallback(
@@ -244,10 +291,9 @@ export default function StudentDetailClient({
         [topicId]: count,
       };
 
-      updateCurrentStudent({ solvedQuestionsByTopic: updated });
-      persistUpdate({ solvedQuestionsByTopic: updated });
+      void persistUpdate({ solvedQuestionsByTopic: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleUpdateWeeklyTopicSolvedQuestions = useCallback(
@@ -260,10 +306,9 @@ export default function StudentDetailClient({
         [topicId]: count,
       };
 
-      updateCurrentStudent({ weeklySolvedQuestionsByTopic: updated });
-      persistUpdate({ weeklySolvedQuestionsByTopic: updated });
+      void persistUpdate({ weeklySolvedQuestionsByTopic: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleUpdateWeeklySolvedQuestions = useCallback(
@@ -277,10 +322,9 @@ export default function StudentDetailClient({
         [key]: count,
       };
 
-      updateCurrentStudent({ weeklySolvedQuestionsByCourse: updated });
-      persistUpdate({ weeklySolvedQuestionsByCourse: updated });
+      void persistUpdate({ weeklySolvedQuestionsByCourse: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleAddMockExam = useCallback(
@@ -289,10 +333,9 @@ export default function StudentDetailClient({
       if (!student) return;
 
       const updated = [...(student.mockExams ?? []), exam];
-      updateCurrentStudent({ mockExams: updated });
-      persistUpdate({ mockExams: updated });
+      void persistUpdate({ mockExams: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleDeleteMockExam = useCallback(
@@ -301,10 +344,9 @@ export default function StudentDetailClient({
       if (!student) return;
 
       const updated = (student.mockExams ?? []).filter((e) => e.id !== examId);
-      updateCurrentStudent({ mockExams: updated });
-      persistUpdate({ mockExams: updated });
+      void persistUpdate({ mockExams: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleUpdateMockExam = useCallback(
@@ -315,10 +357,9 @@ export default function StudentDetailClient({
       const updated = (student.mockExams ?? []).map((e) =>
         e.id === exam.id ? exam : e,
       );
-      updateCurrentStudent({ mockExams: updated });
-      persistUpdate({ mockExams: updated });
+      void persistUpdate({ mockExams: updated });
     },
-    [updateCurrentStudent, persistUpdate],
+    [persistUpdate],
   );
 
   const handleResetWeeklyPlan = useCallback(async () => {
@@ -327,10 +368,11 @@ export default function StudentDetailClient({
       weeklySolvedQuestionsByCourse: {},
       weeklySolvedQuestionsByTopic: {},
     };
-    updateCurrentStudent(updates);
-    await persistUpdate(updates);
-    toast.success("Haftalık plan sıfırlandı.");
-  }, [updateCurrentStudent, persistUpdate]);
+    const saved = await persistUpdate(updates);
+    if (saved) {
+      toast.success("Haftalık plan sıfırlandı.");
+    }
+  }, [persistUpdate]);
 
   const handleWeeklyPrint = () => {
     setIsPrintingWeekly(true);
@@ -609,12 +651,17 @@ export default function StudentDetailClient({
       <DevelopmentReportModal
         isOpen={showDevelopmentReport}
         onClose={() => setShowDevelopmentReport(false)}
+        studentId={currentStudent._id}
         studentName={currentStudent.name}
         target={currentStudent.target}
+        parentEmail={currentStudent.parentEmail}
         topics={currentStudent.topics}
         solvedQuestionsByCourse={solvedQuestions}
         solvedQuestionsByTopic={solvedQuestionsByTopic}
         mockExams={mockExams}
+        onParentEmailSaved={(savedParentEmail) => {
+          updateCurrentStudent({ parentEmail: savedParentEmail });
+        }}
       />
 
       <AddStudentModal />
@@ -638,7 +685,7 @@ export default function StudentDetailClient({
         variant="danger"
         onConfirm={() => {
           setShowResetConfirm(false);
-          handleResetWeeklyPlan();
+          void handleResetWeeklyPlan();
         }}
         onCancel={() => setShowResetConfirm(false)}
       />

@@ -1,32 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import type { CourseSolvedQuestions, MockExam, TopicProgress } from "@/store/useStudentStore";
+import { toast } from "sonner";
+import type {
+  CourseSolvedQuestions,
+  MockExam,
+  TopicProgress,
+} from "@/store/useStudentStore";
 import DevelopmentReportView from "@/components/DevelopmentReportView";
-import { FiPrinter, FiX } from "react-icons/fi";
+import { FiMail, FiPrinter, FiX } from "react-icons/fi";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  studentId?: string;
   studentName: string;
   target?: string;
+  parentEmail?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   mockExams?: MockExam[];
+  onParentEmailSaved?: (parentEmail: string) => void;
 };
 
-export default function DevelopmentReportModal({
-  isOpen,
-  onClose,
-  studentName,
-  target,
-  topics,
-  solvedQuestionsByCourse,
-  solvedQuestionsByTopic,
-  mockExams = [],
-}: Props) {
+export default function DevelopmentReportModal(props: Readonly<Props>) {
+  const { isOpen, onClose } = props;
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -43,8 +44,66 @@ export default function DevelopmentReportModal({
 
   if (!isOpen) return null;
 
+  return <DevelopmentReportBody {...props} />;
+}
+
+function DevelopmentReportBody({
+  onClose,
+  studentId,
+  studentName,
+  target,
+  parentEmail = "",
+  topics,
+  solvedQuestionsByCourse,
+  solvedQuestionsByTopic,
+  mockExams = [],
+  onParentEmailSaved,
+}: Readonly<Props>) {
+  const [emailInput, setEmailInput] = useState(parentEmail);
+  const [isSending, setIsSending] = useState(false);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSend = async () => {
+    if (!studentId) return;
+    const trimmed = emailInput.trim();
+    if (!trimmed) {
+      toast.error("Veli e-postası girin.");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      if (trimmed.toLowerCase() !== parentEmail.trim().toLowerCase()) {
+        const patchRes = await fetch(`/api/students/${studentId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentEmail: trimmed }),
+        });
+        const patchBody = await patchRes.json();
+        if (!patchRes.ok) {
+          throw new Error(patchBody.error || "Veli e-postası kaydedilemedi.");
+        }
+        onParentEmailSaved?.(patchBody.parentEmail ?? trimmed.toLowerCase());
+      }
+
+      const res = await fetch(`/api/students/${studentId}/report-email`, {
+        method: "POST",
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body.error || "Mail gönderilemedi.");
+      }
+      toast.success("Gelişim raporu veliye gönderildi.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Mail gönderilemedi.",
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -88,6 +147,28 @@ export default function DevelopmentReportModal({
             </button>
           </div>
         </div>
+
+        {studentId ? (
+          <div className="flex flex-col sm:flex-row gap-2 px-6 py-3 border-b border-slate-100 print:hidden">
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(event) => setEmailInput(event.target.value)}
+              placeholder="Veli e-postası"
+              className="input-premium flex-1"
+              aria-label="Veli e-postası"
+            />
+            <button
+              type="button"
+              onClick={() => void handleSend()}
+              disabled={isSending}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-60"
+            >
+              <FiMail />
+              {isSending ? "Gönderiliyor..." : "Veliye gönder"}
+            </button>
+          </div>
+        ) : null}
 
         <DevelopmentReportView
           studentName={studentName}

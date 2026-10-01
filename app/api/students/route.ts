@@ -1,36 +1,32 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { jsonError, readJsonBody } from "@/lib/api";
+import { requireTeacherSession } from "@/lib/api-auth";
+import { parseOptionalEmail } from "@/lib/mail";
 import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
 import { masterCurriculum } from "@/data/subjects";
+import { createStudentSchema, zodErrorMessage } from "@/lib/student-payload";
 
-class UnauthorizedError extends Error {
-  constructor() {
-    super("Unauthorized");
-    this.name = "UnauthorizedError";
-  }
-}
-
-async function checkAuth() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) {
-    throw new UnauthorizedError();
-  }
-  return session.user.email;
-}
-
-// Yeni Öğrenci Ekleme
 export async function POST(req: Request) {
   try {
-    const teacherEmail = await checkAuth();
+    const auth = await requireTeacherSession();
+    if (!auth.ok) return auth.response;
     await connectMongo();
 
-    const { name, target } = await req.json();
+    const parsedBody = await readJsonBody(req);
+    if (!parsedBody.ok) return parsedBody.response;
 
-    // JSON havuzundan tüm konu ID'lerini çekip başlangıç state'i oluşturuyoruz
+    const parsed = createStudentSchema.safeParse(parsedBody.data);
+    if (!parsed.success) {
+      return jsonError(zodErrorMessage(parsed.error), 400);
+    }
+
+    const parentEmail = parseOptionalEmail(parsed.data.parentEmail);
+    if (parentEmail === null) {
+      return jsonError("Geçerli bir veli e-postası girin.", 400);
+    }
+
     const initialTopics: { id: string; isCompleted: boolean }[] = [];
-
     const exams = ["TYT", "AYT"] as const;
     exams.forEach((exam) => {
       const courses = masterCurriculum[exam];
@@ -42,9 +38,10 @@ export async function POST(req: Request) {
     });
 
     const newStudent = await Student.create({
-      name,
-      target,
-      teacherEmail,
+      name: parsed.data.name,
+      target: parsed.data.target,
+      parentEmail,
+      teacherEmail: auth.email,
       topics: initialTopics,
       weeklySelectedTopics: [],
       solvedQuestionsByCourse: {},
@@ -56,34 +53,23 @@ export async function POST(req: Request) {
 
     return NextResponse.json(newStudent, { status: 201 });
   } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Öğrenci eklenirken hata oluştu." },
-      { status: 500 },
-    );
+    console.error("Öğrenci eklenirken hata:", error);
+    return jsonError("Öğrenci eklenirken hata oluştu.", 500);
   }
 }
 
-// Öğrencileri Listeleme
 export async function GET() {
   try {
-    const teacherEmail = await checkAuth();
+    const auth = await requireTeacherSession();
+    if (!auth.ok) return auth.response;
     await connectMongo();
 
-    // Sadece giriş yapan öğretmenin öğrencilerini getiriyoruz
-    const students = await Student.find({ teacherEmail }).sort({
+    const students = await Student.find({ teacherEmail: auth.email }).sort({
       createdAt: -1,
     });
     return NextResponse.json(students, { status: 200 });
   } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Öğrenciler getirilemedi." },
-      { status: 500 },
-    );
+    console.error("Öğrenciler getirilemedi:", error);
+    return jsonError("Öğrenciler getirilemedi.", 500);
   }
 }

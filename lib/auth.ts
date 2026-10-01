@@ -1,43 +1,30 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { assertServerEnv } from "@/lib/env";
 import { ensureNextAuthUrl } from "@/lib/nextauth-url";
+import { resolveStaffAccess } from "@/lib/staff";
 
+assertServerEnv();
 ensureNextAuthUrl();
 
-function parseEmailList(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+export async function isTeacherEmail(email: string | null | undefined): Promise<boolean> {
+  return (await resolveStaffAccess(email)).isTeacher;
 }
 
-export function getTeacherEmails(): string[] {
-  return parseEmailList(process.env.ALLOWED_EMAILS);
+export async function isAdminEmail(email: string | null | undefined): Promise<boolean> {
+  return (await resolveStaffAccess(email)).isAdmin;
 }
 
-export function getAdminEmails(): string[] {
-  return parseEmailList(process.env.ADMIN_EMAILS);
-}
-
-export function isTeacherEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return getTeacherEmails().includes(email.toLowerCase());
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return getAdminEmails().includes(email.toLowerCase());
-}
-
-export function canSignIn(email: string | null | undefined): boolean {
-  return isTeacherEmail(email) || isAdminEmail(email);
+export async function canSignIn(email: string | null | undefined): Promise<boolean> {
+  const access = await resolveStaffAccess(email);
+  return access.isAdmin || access.isTeacher;
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
@@ -45,14 +32,12 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       const userEmail = user.email?.toLowerCase();
 
-      if (userEmail && canSignIn(userEmail)) {
+      if (userEmail && (await canSignIn(userEmail))) {
         return true;
       }
 
       console.log("🚨 REDDEDİLEN GİRİŞ DENEMESİ 🚨");
       console.log("Gelen Mail:", userEmail);
-      console.log("İzin Verilen Öğretmen Mailleri:", getTeacherEmails());
-      console.log("İzin Verilen Admin Mailleri:", getAdminEmails());
 
       return false;
     },
@@ -60,8 +45,9 @@ export const authOptions: NextAuthOptions = {
       const email = (user?.email ?? token.email)?.toLowerCase();
       if (email) {
         token.email = email;
-        token.isAdmin = isAdminEmail(email);
-        token.isTeacher = isTeacherEmail(email);
+        const access = await resolveStaffAccess(email);
+        token.isAdmin = access.isAdmin;
+        token.isTeacher = access.isTeacher;
       }
       return token;
     },

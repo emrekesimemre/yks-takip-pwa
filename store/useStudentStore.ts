@@ -27,6 +27,7 @@ export type Student = {
   _id?: string;
   name: string;
   target: string;
+  parentEmail?: string;
   topics: TopicProgress[];
   weeklySelectedTopics: string[];
   solvedQuestionsByCourse: CourseSolvedQuestions;

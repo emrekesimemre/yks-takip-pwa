@@ -1,4 +1,5 @@
-import { authOptions, isAdminEmail } from "@/lib/auth";
+import { jsonError } from "@/lib/api";
+import { requireAdminSession } from "@/lib/api-auth";
 import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
 import type { MockExam } from "@/store/useStudentStore";
@@ -8,14 +9,35 @@ import {
 } from "@/utils/curriculum";
 import { calculateExamTotalNet } from "@/utils/deneme";
 import { normalizeTopics } from "@/utils/student";
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+
+const ADMIN_STUDENT_LIMIT = 2000;
+
+const OVERVIEW_PROJECTION = {
+  name: 1,
+  target: 1,
+  teacherEmail: 1,
+  topics: 1,
+  weeklySelectedTopics: 1,
+  solvedQuestionsByCourse: 1,
+  solvedQuestionsByTopic: 1,
+  weeklySolvedQuestionsByCourse: 1,
+  weeklySolvedQuestionsByTopic: 1,
+  mockExams: 1,
+  updatedAt: 1,
+} as const;
 
 function getTotalSolvedQuestions(
   courseRecord: Record<string, number> | Map<string, number> | undefined,
   topicRecord?: Record<string, number> | Map<string, number> | undefined,
 ): number {
   return getTotalSolvedFromCurriculum(courseRecord, topicRecord);
+}
+
+function isoDate(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  return null;
 }
 
 function getLatestMockExamNet(mockExams: MockExam[]): number | null {
@@ -30,15 +52,19 @@ function getLatestMockExamNet(mockExams: MockExam[]): number | null {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email || !isAdminEmail(session.user.email)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    const auth = await requireAdminSession();
+    if (!auth.ok) return auth.response;
 
     await connectMongo();
 
-    const students = await Student.find().sort({ createdAt: -1 }).lean();
+    const docs = await Student.find()
+      .select(OVERVIEW_PROJECTION)
+      .sort({ createdAt: -1 })
+      .limit(ADMIN_STUDENT_LIMIT + 1)
+      .lean();
+
+    const truncated = docs.length > ADMIN_STUDENT_LIMIT;
+    const students = truncated ? docs.slice(0, ADMIN_STUDENT_LIMIT) : docs;
 
     const overview = students.map((student) => {
       const topics = normalizeTopics(student.topics);
@@ -61,7 +87,7 @@ export async function GET() {
         ),
         mockExamCount: mockExams.length,
         latestMockExamNet: getLatestMockExamNet(mockExams),
-        updatedAt: student.updatedAt?.toISOString?.() ?? null,
+        updatedAt: isoDate(student.updatedAt),
       };
     });
 
@@ -78,14 +104,12 @@ export async function GET() {
         totalStudents: overview.length,
         totalTeachers: teacherEmails.length,
         averageProgress,
+        truncated,
       },
       students: overview,
     });
   } catch (error) {
     console.error("Admin overview hatası:", error);
-    return NextResponse.json(
-      { error: "Genel durum getirilemedi." },
-      { status: 500 },
-    );
+    return jsonError("Genel durum getirilemedi.", 500);
   }
 }

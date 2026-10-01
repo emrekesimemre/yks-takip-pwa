@@ -28,9 +28,16 @@ const MockExamSchema = new Schema(
 
 const StudentSchema = new Schema(
   {
-    name: { type: String, required: true },
-    target: { type: String }, // Sayısal 10k vb.
-    teacherEmail: { type: String, required: true }, // Hangi öğretmenin öğrencisi? Güvenlik için.
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    target: { type: String, trim: true, maxlength: 80 },
+    teacherEmail: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    parentEmail: { type: String, default: "", lowercase: true, trim: true },
     topics: [TopicProgressSchema],
     weeklySelectedTopics: { type: [String], default: [] },
     solvedQuestionsByCourse: { type: Map, of: Number, default: {} },
