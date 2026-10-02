@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { requireAdminSession } from "@/lib/api-auth";
 import connectMongo from "@/lib/mongo";
+import { publicTeacherEmail } from "@/lib/staff";
 import Student from "@/models/Student";
 import {
   discoverExamGroups,
@@ -31,7 +32,7 @@ export async function GET() {
     const sources: StudentExamSource[] = students.map((student) => ({
       _id: String(student._id),
       name: student.name,
-      teacherEmail: student.teacherEmail,
+      teacherEmail: publicTeacherEmail(student.teacherEmail),
       mockExams: (student.mockExams ?? []) as MockExam[],
     }));
 

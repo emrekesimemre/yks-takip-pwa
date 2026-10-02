@@ -1,7 +1,7 @@
 import { jsonError } from "@/lib/api";
 import { requireAdminSession } from "@/lib/api-auth";
 import connectMongo from "@/lib/mongo";
-import { listTeacherEmails } from "@/lib/staff";
+import { listTeacherEmails, publicTeacherEmail } from "@/lib/staff";
 import Student from "@/models/Student";
 import type { MockExam } from "@/store/useStudentStore";
 import {
@@ -75,7 +75,7 @@ export async function GET() {
         _id: String(student._id),
         name: student.name,
         target: student.target ?? "",
-        teacherEmail: student.teacherEmail,
+        teacherEmail: publicTeacherEmail(student.teacherEmail),
         progress: getOverallProgress(topics),
         weeklyTopicCount: student.weeklySelectedTopics?.length ?? 0,
         totalSolvedQuestions: getTotalSolvedQuestions(

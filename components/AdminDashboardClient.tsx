@@ -369,13 +369,19 @@ function OverviewTabContent({
               <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
-                      Öğretmen
-                    </p>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      {formatTeacherLabel(teacherEmail)}
-                    </h2>
-                    <p className="text-xs text-slate-500">{teacherEmail}</p>
+                    {teacherEmail ? (
+                      <>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
+                          Öğretmen
+                        </p>
+                        <h2 className="text-lg font-bold text-slate-900">
+                          {formatTeacherLabel(teacherEmail)}
+                        </h2>
+                        <p className="text-xs text-slate-500">{teacherEmail}</p>
+                      </>
+                    ) : (
+                      <h2 className="text-lg font-bold text-slate-900">Öğrenciler</h2>
+                    )}
                   </div>
                   <div className="text-sm text-slate-500">
                     {students.length} öğrenci

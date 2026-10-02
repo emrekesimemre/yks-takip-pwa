@@ -457,12 +457,18 @@ export default function AdminExamRankings({
                     </td>
                   )}
                   <td className="px-5 py-4">
-                    <div className="text-sm text-slate-600">
-                      {formatTeacherLabel(entry.teacherEmail)}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      {entry.teacherEmail}
-                    </div>
+                    {entry.teacherEmail ? (
+                      <>
+                        <div className="text-sm text-slate-600">
+                          {formatTeacherLabel(entry.teacherEmail)}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {entry.teacherEmail}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-slate-400">—</div>
+                    )}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <span
