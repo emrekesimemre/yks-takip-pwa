@@ -83,10 +83,11 @@ export function staffInviteHtml(input: {
     </p>
     ${
       input.kind === "invite"
-        ? `<p style="margin:0 0 20px;line-height:1.5;">Telefonda ana ekrana eklemek için panele girince çıkan yönergeyi izleyin.</p>`
-        : ""
+        ? `<p style="margin:0 0 20px;line-height:1.5;">Telefonda ana ekrana eklemek için panele girince çıkan yönergeyi izleyin.</p>
+    <p style="margin:0 0 20px;line-height:1.5;">İyi çalışmalar.</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">Bu daveti ${actor} gönderdi.</p>`
+        : `<p style="margin:0;font-size:13px;color:#64748b;">Bu güncellemeyi ${actor} gönderdi.</p>`
     }
-    <p style="margin:0;font-size:13px;color:#64748b;">Gönderen: ${actor}. Yanıtlamak için Yanıtla’ya basın.</p>
   `);
 }
 
@@ -193,7 +194,7 @@ export function developmentReportHtml(input: {
     <p style="margin:0 0 6px;">TYT: ${tytExams.length} deneme, ortalama ${formatNet(avgNet(tytExams))} net, son ${formatNet(lastNet(tytExams))} net</p>
     <p style="margin:0 0 12px;">AYT: ${aytExams.length} deneme, ortalama ${formatNet(avgNet(aytExams))} net, son ${formatNet(lastNet(aytExams))} net</p>
     <p style="margin:0 0 20px;">En zayıf dersler: ${escapeHtml(weakestText)}</p>
-    <p style="margin:0;font-size:13px;color:#64748b;">Bu rapor ${escapeHtml(input.teacherEmail)} tarafından gönderildi. Yanıtlamak için Yanıtla’ya basın.</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">Bu rapor ${escapeHtml(input.teacherEmail)} tarafından gönderildi.</p>
   `);
 }
 
