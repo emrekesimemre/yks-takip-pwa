@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { safeResolveStaffAccess } from "@/lib/staff";
 import AdminHeader from "@/components/AdminHeader";
 import AppFooter from "@/components/AppFooter";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export default async function AdminLayout({
   children,
@@ -34,7 +35,10 @@ export default async function AdminLayout({
         isAdmin={isAdmin}
         isTeacher={isTeacher}
       />
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-8 w-full min-w-0 flex-1">{children}</main>
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-8 w-full min-w-0 flex-1">
+        <InstallPrompt />
+        {children}
+      </main>
       <AppFooter />
     </div>
   );

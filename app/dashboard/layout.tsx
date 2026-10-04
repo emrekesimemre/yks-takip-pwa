@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { safeResolveStaffAccess } from "@/lib/staff";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export default async function DashboardLayout({
   children,
@@ -35,6 +36,7 @@ export default async function DashboardLayout({
         isTeacher={isTeacher}
       />
       <main className="max-w-6xl mx-auto px-3 sm:px-4 py-8 print:p-0 print:max-w-none w-full min-w-0 flex-1">
+        <InstallPrompt />
         {children}
       </main>
       <AppFooter />

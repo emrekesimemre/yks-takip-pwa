@@ -81,6 +81,11 @@ export function staffInviteHtml(input: {
       Buton açılmazsa bu adresi kullanın:<br />
       <a href="${siteUrl}" style="color:#4f46e5;">${siteUrl}</a>
     </p>
+    ${
+      input.kind === "invite"
+        ? `<p style="margin:0 0 20px;line-height:1.5;">Telefonda ana ekrana eklemek için panele girince çıkan yönergeyi izleyin.</p>`
+        : ""
+    }
     <p style="margin:0;font-size:13px;color:#64748b;">Gönderen: ${actor}. Yanıtlamak için Yanıtla’ya basın.</p>
   `);
 }
