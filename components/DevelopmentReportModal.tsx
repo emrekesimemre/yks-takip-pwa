@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useSoftTransition } from "@/components/ui/soft-motion";
 import { toast } from "sonner";
 import type {
   CourseSolvedQuestions,
@@ -42,9 +43,11 @@ export default function DevelopmentReportModal(props: Readonly<Props>) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
-  return <DevelopmentReportBody {...props} />;
+  return (
+    <AnimatePresence>
+      {isOpen ? <DevelopmentReportBody key="development-report" {...props} /> : null}
+    </AnimatePresence>
+  );
 }
 
 function DevelopmentReportBody({
@@ -59,6 +62,7 @@ function DevelopmentReportBody({
   mockExams = [],
   onParentEmailSaved,
 }: Readonly<Props>) {
+  const transition = useSoftTransition();
   const [emailInput, setEmailInput] = useState(parentEmail);
   const [isSending, setIsSending] = useState(false);
 
@@ -108,7 +112,11 @@ function DevelopmentReportBody({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6 print:p-0 print:static print:overflow-visible print:block">
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={transition}
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm print:hidden cursor-pointer"
         onClick={onClose}
         aria-hidden
@@ -117,7 +125,8 @@ function DevelopmentReportBody({
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: 0, y: 16, scale: 0.98 }}
+        transition={transition}
         className="relative w-full max-w-4xl my-4 sm:my-8 bg-white rounded-2xl shadow-2xl overflow-hidden print:my-0 print:shadow-none print:max-w-none print:rounded-none"
         role="dialog"
         aria-modal="true"

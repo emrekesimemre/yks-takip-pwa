@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { DropdownPanel } from "@/components/ui/soft-motion";
 import {
   FiBarChart2,
   FiCalendar,
@@ -265,8 +266,10 @@ export default function AdminExamRankings({
               />
             </button>
 
-            {isDateOpen && (
-              <div className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+            <DropdownPanel
+              open={isDateOpen}
+              className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
+            >
                 <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
                   {dateOptions.map((option) => {
                     const isSelected = option.value === dateFilter;
@@ -298,8 +301,7 @@ export default function AdminExamRankings({
                     );
                   })}
                 </ul>
-              </div>
-            )}
+            </DropdownPanel>
           </div>
 
           <div ref={groupSelectRef} className="relative">
@@ -329,8 +331,10 @@ export default function AdminExamRankings({
               />
             </button>
 
-            {isGroupOpen && filteredGroups.length > 0 && (
-              <div className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+            <DropdownPanel
+              open={isGroupOpen && filteredGroups.length > 0}
+              className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
+            >
                 <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
                   {filteredGroups.map((group) => {
                     const isSelected = group.key === activeGroupKey;
@@ -372,8 +376,7 @@ export default function AdminExamRankings({
                     );
                   })}
                 </ul>
-              </div>
-            )}
+            </DropdownPanel>
           </div>
         </div>
       </div>

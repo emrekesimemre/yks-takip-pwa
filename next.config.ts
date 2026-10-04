@@ -31,11 +31,11 @@ const nextConfig: NextConfig = {
     const headers = [...baseSecurityHeaders];
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.googleusercontent.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.ingest.sentry.io https://*.sentry.io",
+      "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.ingest.sentry.io https://*.sentry.io https://va.vercel-scripts.com https://vitals.vercel-insights.com",
       "frame-src https://accounts.google.com",
       "worker-src 'self' blob:",
       "manifest-src 'self'",

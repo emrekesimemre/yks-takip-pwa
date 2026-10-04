@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import AuthProvider from "@/components/AuthProvider";
 import PullToRefresh from "@/components/PullToRefresh";
 import { Toaster } from "sonner";
@@ -81,6 +82,7 @@ export default function RootLayout({
           closeButton
           toastOptions={{ duration: 4000 }}
         />
+        <Analytics />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FiChevronDown, FiCheck, FiUser } from "react-icons/fi";
+import { DropdownPanel } from "@/components/ui/soft-motion";
 
 type Option = {
   value: string;
@@ -67,8 +68,10 @@ export default function TeacherFilterSelect({ value, options, onChange }: Props)
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+      <DropdownPanel
+        open={isOpen}
+        className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
+      >
           <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -107,8 +110,7 @@ export default function TeacherFilterSelect({ value, options, onChange }: Props)
               );
             })}
           </ul>
-        </div>
-      )}
+      </DropdownPanel>
     </div>
   );
 }

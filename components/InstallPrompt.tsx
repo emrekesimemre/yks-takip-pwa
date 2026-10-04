@@ -1,7 +1,10 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { FiSmartphone, FiX } from "react-icons/fi";
+import { AnimatePresence, motion } from "framer-motion";
+import { FiX } from "react-icons/fi";
+import { BrandIconMark } from "@/lib/brand-icon";
+import { useSoftTransition } from "@/components/ui/soft-motion";
 
 const DISMISS_KEY = "yks-pwa-install-dismissed";
 const INSTALL_READY = "yks-beforeinstallprompt";
@@ -129,6 +132,7 @@ bindInstallPrompt();
 
 export default function InstallPrompt() {
   const mode = useSyncExternalStore(subscribe, getInstallMode, () => "hidden" as const);
+  const transition = useSoftTransition();
 
   async function install() {
     const promptEvent = (window as InstallWindow).__yksInstallPrompt;
@@ -145,17 +149,20 @@ export default function InstallPrompt() {
     notifyInstallChange();
   }
 
-  if (mode === "hidden") return null;
-
   return (
-    <section
-      className="print:hidden mb-6 rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 shadow-sm"
-      aria-label="Uygulamayı ana ekrana ekle"
-    >
+    <AnimatePresence>
+      {mode !== "hidden" ? (
+        <motion.section
+          key="install-prompt"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={transition}
+          className="print:hidden mb-6 rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 shadow-sm"
+          aria-label="Uygulamayı ana ekrana ekle"
+        >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600">
-          <FiSmartphone className="text-white" aria-hidden="true" />
-        </div>
+        <BrandIconMark size={36} className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-900">Ana ekrana ekleyin</p>
           <p className="mt-0.5 text-sm leading-relaxed text-slate-600">{installMessage(mode)}</p>
@@ -178,6 +185,8 @@ export default function InstallPrompt() {
           <FiX aria-hidden="true" />
         </button>
       </div>
-    </section>
+        </motion.section>
+      ) : null}
+    </AnimatePresence>
   );
 }

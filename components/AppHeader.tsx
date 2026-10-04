@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 import PanelSwitcher from "@/components/PanelSwitcher";
-import { FiBookOpen } from "react-icons/fi";
+import { BrandIconMark } from "@/lib/brand-icon";
 
 type Props = {
   userName?: string | null;
@@ -21,11 +21,9 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
       <div className="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 min-w-0">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 group shrink-0"
+          className="flex items-center gap-2 shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
-            <FiBookOpen className="text-white text-lg" />
-          </div>
+          <BrandIconMark size={44} className="shrink-0" />
           <div className="hidden sm:block">
             <div className="font-bold text-lg text-slate-900 tracking-tight leading-none">
               YKS Takip
@@ -60,7 +58,7 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
               </span>
             </div>
           )}
-          <LogoutButton />
+          {!(isAdmin && isTeacher) && <LogoutButton />}
         </div>
       </div>
     </header>

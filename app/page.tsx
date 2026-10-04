@@ -6,6 +6,7 @@ import LoginButton from "@/components/LoginButton";
 import HomeAuthActions from "@/components/HomeAuthActions";
 import AppFooter from "@/components/AppFooter";
 import { FiBarChart2, FiCalendar, FiTarget } from "react-icons/fi";
+import { BrandIconMark } from "@/lib/brand-icon";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -48,8 +49,8 @@ export default async function Home() {
 
         <div className="max-w-lg w-full relative z-10">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xl shadow-blue-500/30 mb-6 animate-float">
-              <FiTarget className="text-white text-3xl" />
+            <div className="inline-flex mb-6 animate-float">
+              <BrandIconMark size={64} />
             </div>
             <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
               YKS Takip
