@@ -15,6 +15,7 @@ import {
   FiBookOpen,
   FiBarChart2,
   FiShield,
+  FiDownload,
 } from "react-icons/fi";
 import AdminStaffPanel from "@/components/AdminStaffPanel";
 
@@ -45,7 +46,12 @@ type OverviewResponse = {
   students: StudentOverview[];
 };
 
-const tabs: { id: AdminTab; label: string; shortLabel: string; icon: typeof FiUsers }[] = [
+const tabs: {
+  id: AdminTab;
+  label: string;
+  shortLabel: string;
+  icon: typeof FiUsers;
+}[] = [
   { id: "overview", label: "Genel Durum", shortLabel: "Genel", icon: FiUsers },
   { id: "exams", label: "Deneme", shortLabel: "Deneme", icon: FiBarChart2 },
   { id: "staff", label: "Personel", shortLabel: "Personel", icon: FiShield },
@@ -56,6 +62,61 @@ const tabDescriptions: Record<AdminTab, string> = {
   exams: "Denemelere göre öğrenci sıralaması ve net karşılaştırması",
   staff: "Öğretmen ve yönetici hesaplarını buradan ekleyin",
 };
+
+function csvCell(value: string | number | null | undefined): string {
+  const str = value == null ? "" : String(value);
+  if (/[",\n\r]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+}
+
+function downloadStudentsCsv(
+  students: StudentOverview[],
+  formatTeacher: (email: string) => string,
+) {
+  const header = [
+    "Ad",
+    "Öğretmen",
+    "Hedef",
+    "İlerleme (%)",
+    "Haftalık Konu",
+    "Toplam Soru",
+    "Deneme Sayısı",
+    "Son Net",
+    "Son Güncelleme",
+  ];
+
+  const rows = students.map((student) => [
+    csvCell(student.name),
+    csvCell(formatTeacher(student.teacherEmail)),
+    csvCell(student.target),
+    csvCell(student.progress),
+    csvCell(student.weeklyTopicCount),
+    csvCell(student.totalSolvedQuestions),
+    csvCell(student.mockExamCount),
+    csvCell(
+      student.latestMockExamNet == null
+        ? ""
+        : student.latestMockExamNet.toFixed(1),
+    ),
+    csvCell(
+      student.updatedAt
+        ? new Date(student.updatedAt).toLocaleDateString("tr-TR")
+        : "",
+    ),
+  ]);
+
+  const csv = [header.join(","), ...rows.map((row) => row.join(","))].join(
+    "\n",
+  );
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `yks-takip-ogrenciler-${stamp}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 function formatTeacherLabel(email: string): string {
   const localPart = email.split("@")[0] ?? email;
@@ -89,7 +150,9 @@ export default function AdminDashboardClient({
   canManageStaff,
 }: Readonly<AdminDashboardClientProps>) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
-  const visibleTabs = canManageStaff ? tabs : tabs.filter((tab) => tab.id !== "staff");
+  const visibleTabs = canManageStaff
+    ? tabs
+    : tabs.filter((tab) => tab.id !== "staff");
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -168,7 +231,9 @@ export default function AdminDashboardClient({
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
           Yönetici Paneli
         </h1>
-        <p className="text-slate-500 text-sm mt-1">{tabDescriptions[activeTab]}</p>
+        <p className="text-slate-500 text-sm mt-1">
+          {tabDescriptions[activeTab]}
+        </p>
       </div>
 
       <div className="card-premium overflow-hidden">
@@ -269,7 +334,9 @@ function OverviewTabContent({
   if (!data) {
     return (
       <div className="py-12 text-center">
-        <p className="text-slate-600">Veriler yüklenemedi. Lütfen sayfayı yenileyin.</p>
+        <p className="text-slate-600">
+          Veriler yüklenemedi. Lütfen sayfayı yenileyin.
+        </p>
       </div>
     );
   }
@@ -285,6 +352,19 @@ function OverviewTabContent({
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() =>
+            downloadStudentsCsv(filteredStudents, formatTeacherLabel)
+          }
+          disabled={filteredStudents.length === 0}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-xl hover:bg-violet-50 hover:text-violet-700 border border-slate-200 hover:border-violet-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+        >
+          <FiDownload />
+          Öğrenci listesini indir
+        </button>
+      </div>
       {summary.truncated && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Öğrenci listesi üst limite ulaştığı için kısaltıldı.
@@ -297,8 +377,12 @@ function OverviewTabContent({
               <FiUsers className="text-xl text-blue-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium">Toplam Öğrenci</p>
-              <p className="text-2xl font-bold text-slate-900">{summary.totalStudents}</p>
+              <p className="text-xs text-slate-500 font-medium">
+                Toplam Öğrenci
+              </p>
+              <p className="text-2xl font-bold text-slate-900">
+                {summary.totalStudents}
+              </p>
             </div>
           </div>
         </div>
@@ -309,8 +393,12 @@ function OverviewTabContent({
               <FiUserCheck className="text-xl text-violet-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium">Toplam Öğretmen</p>
-              <p className="text-2xl font-bold text-slate-900">{summary.totalTeachers}</p>
+              <p className="text-xs text-slate-500 font-medium">
+                Toplam Öğretmen
+              </p>
+              <p className="text-2xl font-bold text-slate-900">
+                {summary.totalTeachers}
+              </p>
             </div>
           </div>
         </div>
@@ -321,8 +409,12 @@ function OverviewTabContent({
               <FiTrendingUp className="text-xl text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium">Ortalama İlerleme</p>
-              <p className="text-2xl font-bold text-slate-900">%{summary.averageProgress}</p>
+              <p className="text-xs text-slate-500 font-medium">
+                Ortalama İlerleme
+              </p>
+              <p className="text-2xl font-bold text-slate-900">
+                %{summary.averageProgress}
+              </p>
             </div>
           </div>
         </div>
@@ -365,7 +457,10 @@ function OverviewTabContent({
       ) : (
         <div className="space-y-6">
           {groupsToShow.map(([teacherEmail, students]) => (
-            <section key={teacherEmail} className="card-premium overflow-hidden border border-slate-100">
+            <section
+              key={teacherEmail}
+              className="card-premium overflow-hidden border border-slate-100"
+            >
               <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
@@ -380,7 +475,9 @@ function OverviewTabContent({
                         <p className="text-xs text-slate-500">{teacherEmail}</p>
                       </>
                     ) : (
-                      <h2 className="text-lg font-bold text-slate-900">Öğrenciler</h2>
+                      <h2 className="text-lg font-bold text-slate-900">
+                        Öğrenciler
+                      </h2>
                     )}
                   </div>
                   <div className="text-sm text-slate-500">
@@ -404,65 +501,71 @@ function OverviewTabContent({
                   <tbody>
                     {students.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
+                        <td
+                          colSpan={6}
+                          className="px-5 py-10 text-center text-sm text-slate-500"
+                        >
                           Bu öğretmenin öğrencisi yok.
                         </td>
                       </tr>
                     ) : (
                       students.map((student) => (
-                      <tr
-                        key={student._id}
-                        className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
-                      >
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-sm font-bold text-blue-700 shrink-0">
-                              {student.name.charAt(0).toUpperCase()}
+                        <tr
+                          key={student._id}
+                          className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
+                        >
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-sm font-bold text-blue-700 shrink-0">
+                                {student.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="font-semibold text-slate-800">
+                                {student.name}
+                              </span>
                             </div>
-                            <span className="font-semibold text-slate-800">
-                              {student.name}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                              <FiTarget className="text-blue-400 shrink-0" />
+                              {student.target || "—"}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                            <FiTarget className="text-blue-400 shrink-0" />
-                            {student.target || "—"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <ProgressBar value={student.progress} />
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="text-sm text-slate-700">
-                            <span className="inline-flex items-center gap-1.5">
-                              <FiBookOpen className="text-slate-400" />
-                              {student.weeklyTopicCount} konu
-                            </span>
-                            <p className="text-xs text-slate-400 mt-1">
-                              {student.weeklySolvedQuestions} soru (haftalık)
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="text-sm font-medium text-slate-700">
-                            {student.totalSolvedQuestions.toLocaleString("tr-TR")}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="text-sm text-slate-700">
-                            <span className="inline-flex items-center gap-1.5">
-                              <FiBarChart2 className="text-slate-400" />
-                              {student.mockExamCount} deneme
-                            </span>
-                            {student.latestMockExamNet !== null && (
-                              <p className="text-xs text-emerald-600 font-medium mt-1">
-                                Son: {student.latestMockExamNet.toFixed(1)} net
+                          </td>
+                          <td className="px-5 py-4">
+                            <ProgressBar value={student.progress} />
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="text-sm text-slate-700">
+                              <span className="inline-flex items-center gap-1.5">
+                                <FiBookOpen className="text-slate-400" />
+                                {student.weeklyTopicCount} konu
+                              </span>
+                              <p className="text-xs text-slate-400 mt-1">
+                                {student.weeklySolvedQuestions} soru (haftalık)
                               </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="text-sm font-medium text-slate-700">
+                              {student.totalSolvedQuestions.toLocaleString(
+                                "tr-TR",
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="text-sm text-slate-700">
+                              <span className="inline-flex items-center gap-1.5">
+                                <FiBarChart2 className="text-slate-400" />
+                                {student.mockExamCount} deneme
+                              </span>
+                              {student.latestMockExamNet !== null && (
+                                <p className="text-xs text-emerald-600 font-medium mt-1">
+                                  Son: {student.latestMockExamNet.toFixed(1)}{" "}
+                                  net
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
                       ))
                     )}
                   </tbody>

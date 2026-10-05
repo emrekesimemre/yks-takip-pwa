@@ -6,12 +6,33 @@ import { toast } from "sonner";
 import { useStudentStore, type Student } from "@/store/useStudentStore";
 import AnimatedModal from "@/components/ui/AnimatedModal";
 
+function toStoreStudent(data: Student): Student {
+  return {
+    ...data,
+    _id: data._id != null ? String(data._id) : undefined,
+    name: data.name,
+    target: data.target ?? "",
+    parentEmail: data.parentEmail ?? "",
+    notes: data.notes ?? "",
+    topics: Array.isArray(data.topics) ? data.topics : [],
+    weeklySelectedTopics: Array.isArray(data.weeklySelectedTopics)
+      ? data.weeklySelectedTopics
+      : [],
+    solvedQuestionsByCourse: data.solvedQuestionsByCourse ?? {},
+    solvedQuestionsByTopic: data.solvedQuestionsByTopic ?? {},
+    weeklySolvedQuestionsByCourse: data.weeklySolvedQuestionsByCourse ?? {},
+    weeklySolvedQuestionsByTopic: data.weeklySolvedQuestionsByTopic ?? {},
+    mockExams: Array.isArray(data.mockExams) ? data.mockExams : [],
+  };
+}
+
 type StudentFormProps = {
   isEditMode: boolean;
   editingStudent: Student | null;
   initialName: string;
   initialTarget: string;
   initialParentEmail: string;
+  initialNotes: string;
   onClose: () => void;
 };
 
@@ -21,12 +42,14 @@ function StudentForm({
   initialName,
   initialTarget,
   initialParentEmail,
+  initialNotes,
   onClose,
 }: StudentFormProps) {
   const { addStudent, updateStudent } = useStudentStore();
   const [name, setName] = useState(initialName);
   const [target, setTarget] = useState(initialTarget);
   const [parentEmail, setParentEmail] = useState(initialParentEmail);
+  const [notes, setNotes] = useState(initialNotes);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +66,7 @@ function StudentForm({
             name: name.trim(),
             target: target.trim(),
             parentEmail: parentEmail.trim(),
+            notes: notes.trim(),
           }),
         });
 
@@ -54,6 +78,8 @@ function StudentForm({
           name: savedStudent.name,
           target: savedStudent.target ?? "",
           parentEmail: savedStudent.parentEmail ?? "",
+          notes: savedStudent.notes ?? "",
+          updatedAt: savedStudent.updatedAt ?? editingStudent.updatedAt,
         });
         toast.success("Öğrenci güncellendi.");
       } else {
@@ -64,12 +90,13 @@ function StudentForm({
             name: name.trim(),
             target: target.trim(),
             parentEmail: parentEmail.trim(),
+            notes: notes.trim(),
           }),
         });
 
-        const savedStudent = await res.json();
+        const savedStudent = (await res.json()) as Student & { error?: string };
         if (!res.ok) throw new Error(savedStudent.error || "Kayıt başarısız");
-        addStudent(savedStudent);
+        addStudent(toStoreStudent(savedStudent));
         toast.success("Öğrenci eklendi.");
       }
 
@@ -142,6 +169,23 @@ function StudentForm({
             onChange={(e) => setParentEmail(e.target.value)}
             className="input-premium"
             placeholder="ornek@gmail.com"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="student-notes"
+            className="block text-sm font-semibold text-slate-700 mb-1.5"
+          >
+            Notlar
+          </label>
+          <textarea
+            id="student-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="input-premium min-h-[96px] resize-y"
+            placeholder="Örn: Matematikte zorlanıyor, veli ile görüşüldü"
+            maxLength={1000}
           />
         </div>
 
@@ -218,6 +262,7 @@ export default function AddStudentModal() {
             initialParentEmail={
               isEditMode ? (editingStudent.parentEmail ?? "") : ""
             }
+            initialNotes={isEditMode ? (editingStudent.notes ?? "") : ""}
             onClose={handleClose}
           />
         )}

@@ -30,6 +30,7 @@ export const createStudentSchema = z.object({
   name: z.string().trim().min(1, "Öğrenci adı gerekli.").max(80),
   target: z.string().trim().max(80).optional().default(""),
   parentEmail: z.unknown().optional(),
+  notes: z.string().trim().max(1000).optional().default(""),
 });
 
 export const patchStudentSchema = z.object({
@@ -43,6 +44,7 @@ export const patchStudentSchema = z.object({
   name: z.string().trim().min(1, "Öğrenci adı boş olamaz.").max(80).optional(),
   target: z.string().trim().max(80).optional(),
   parentEmail: z.unknown().optional(),
+  notes: z.string().trim().max(1000).optional(),
 });
 
 export type StudentPatchInput = z.infer<typeof patchStudentSchema>;
@@ -73,5 +75,6 @@ export function studentPatchToUpdate(body: StudentPatchInput) {
   if (body.mockExams !== undefined) updateFields.mockExams = body.mockExams;
   if (body.name !== undefined) updateFields.name = body.name;
   if (body.target !== undefined) updateFields.target = body.target;
+  if (body.notes !== undefined) updateFields.notes = body.notes;
   return updateFields;
 }

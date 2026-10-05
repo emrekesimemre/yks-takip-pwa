@@ -28,6 +28,8 @@ export type Student = {
   name: string;
   target: string;
   parentEmail?: string;
+  notes?: string;
+  updatedAt?: string;
   topics: TopicProgress[];
   weeklySelectedTopics: string[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
@@ -60,7 +62,12 @@ export const useStudentStore = create<StudentStore>((set) => ({
   setAddModalOpen: (isOpen) => set({ isAddModalOpen: isOpen }),
   setEditingStudent: (student) => set({ editingStudent: student }),
   addStudent: (student) =>
-    set((state) => ({ students: [...state.students, student] })),
+    set((state) => ({
+      students: [
+        student,
+        ...state.students.filter((existing) => existing._id !== student._id),
+      ],
+    })),
   setStudents: (students) => set({ students }),
   setCurrentStudent: (student) => set({ currentStudent: student }),
   updateCurrentStudent: (updates) =>

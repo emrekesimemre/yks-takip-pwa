@@ -140,6 +140,7 @@ export default function StudentDetailClient({
         const data = await res.json();
         setCurrentStudent({
           ...data,
+          notes: data.notes ?? "",
           topics: normalizeTopics(data.topics),
           weeklySelectedTopics: data.weeklySelectedTopics ?? [],
           solvedQuestionsByCourse: normalizeSolvedQuestions(
@@ -558,6 +559,17 @@ export default function StudentDetailClient({
             </div>
           </div>
         </div>
+
+        {currentStudent.notes?.trim() ? (
+          <div className="card-premium p-4 sm:p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+              Notlar
+            </p>
+            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+              {currentStudent.notes.trim()}
+            </p>
+          </div>
+        ) : null}
 
         {/* Tabs */}
         <div className="card-premium overflow-hidden">

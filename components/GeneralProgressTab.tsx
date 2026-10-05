@@ -3,10 +3,19 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { masterCurriculum, type Curriculum } from "@/data/subjects";
-import type { CourseSolvedQuestions, TopicProgress } from "@/store/useStudentStore";
-import { getCourseKey, getCourseProgress, getCourseSolvedCount, getCourseGeneralSolvedCount, getTopicSolvedCount } from "@/utils/curriculum";
+import type {
+  CourseSolvedQuestions,
+  TopicProgress,
+} from "@/store/useStudentStore";
+import {
+  getCourseKey,
+  getCourseProgress,
+  getCourseSolvedCount,
+  getCourseGeneralSolvedCount,
+  getTopicSolvedCount,
+} from "@/utils/curriculum";
 import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiSearch } from "react-icons/fi";
 
 type Props = {
   topics: TopicProgress[];
@@ -30,11 +39,23 @@ export default function GeneralProgressTab({
   onUpdateTopicSolvedQuestions,
 }: Props) {
   const [activeExam, setActiveExam] = useState<keyof Curriculum>("TYT");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const selectExam = (exam: keyof Curriculum) => {
+    setActiveExam(exam);
+    setSearchTerm("");
+  };
 
   const getTopicProgress = (topicId: string) =>
     topics.find((t) => t.id === topicId)?.isCompleted ?? false;
 
   const activeCurriculum = masterCurriculum[activeExam];
+  const query = searchTerm.trim().toLowerCase();
+  const hasSearchMatches =
+    !query ||
+    Object.values(activeCurriculum).some((courseTopics) =>
+      courseTopics.some((topic) => topic.title.toLowerCase().includes(query)),
+    );
 
   return (
     <div>
@@ -42,7 +63,7 @@ export default function GeneralProgressTab({
         {(["TYT", "AYT"] as const).map((exam) => (
           <button
             key={exam}
-            onClick={() => setActiveExam(exam)}
+            onClick={() => selectExam(exam)}
             className={`relative px-6 py-2 text-sm font-semibold rounded-lg transition-colors ${
               activeExam === exam
                 ? "text-blue-700"
@@ -61,132 +82,163 @@ export default function GeneralProgressTab({
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Object.entries(activeCurriculum).map(([courseName, courseTopics], idx) => {
-          const progress = getCourseProgress(activeExam, courseName, topics);
-          const solvedCount = getCourseSolvedCount(
-            solvedQuestionsByCourse,
-            activeExam,
-            courseName,
-            solvedQuestionsByTopic,
-          );
-          const generalSolved = getCourseGeneralSolvedCount(
-            solvedQuestionsByCourse,
-            activeExam,
-            courseName,
-          );
+      <div className="relative mb-6">
+        <FiSearch className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Konu ara..."
+          className="input-premium input-with-icon"
+          aria-label="Konu ara"
+        />
+      </div>
 
-          return (
-            <motion.div
-              key={getCourseKey(activeExam, courseName)}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04 }}
-              className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 hover:border-blue-100 hover:bg-white transition-all"
-            >
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-base text-slate-800">
-                    {courseName}
-                  </h3>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {progress.completed}/{progress.total}
-                  </span>
-                </div>
-                <div className="progress-bar mb-1">
-                  <motion.div
-                    className="progress-bar-fill"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress.percentage}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  />
-                </div>
-                <p className="text-xs text-slate-400 mb-3">
-                  %{progress.percentage} tamamlandı
-                </p>
-                <CourseSolvedQuestionsInput
-                  label="Toplam çözülen soru"
-                  value={solvedCount}
-                  onChange={() => {}}
-                  disabled
-                />
-              </div>
+      {!hasSearchMatches ? (
+        <p className="text-sm text-slate-500 text-center py-10">
+          Eşleşen konu bulunamadı.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Object.entries(activeCurriculum).map(
+            ([courseName, courseTopics], idx) => {
+              const progress = getCourseProgress(
+                activeExam,
+                courseName,
+                topics,
+              );
+              const solvedCount = getCourseSolvedCount(
+                solvedQuestionsByCourse,
+                activeExam,
+                courseName,
+                solvedQuestionsByTopic,
+              );
+              const generalSolved = getCourseGeneralSolvedCount(
+                solvedQuestionsByCourse,
+                activeExam,
+                courseName,
+              );
+              const visibleTopics = query
+                ? courseTopics.filter((topic) =>
+                    topic.title.toLowerCase().includes(query),
+                  )
+                : courseTopics;
 
-              <div className="space-y-1 mt-4 max-h-64 overflow-y-auto pr-1">
-                {courseTopics.map((topic) => {
-                  const isCompleted = getTopicProgress(topic.id);
-                  const topicSolved = getTopicSolvedCount(
-                    solvedQuestionsByTopic,
-                    topic.id,
-                  );
-                  return (
-                    <div
-                      key={topic.id}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all ${
-                        isCompleted
-                          ? "bg-green-50/60 border border-green-100"
-                          : "hover:bg-white border border-transparent hover:border-slate-100"
-                      }`}
-                    >
-                      <label className="relative mt-0.5 shrink-0 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isCompleted}
-                          onChange={() =>
-                            onToggleCompletion(topic.id, !isCompleted)
-                          }
-                          className="sr-only"
-                        />
+              if (query && visibleTopics.length === 0) return null;
+
+              return (
+                <motion.div
+                  key={getCourseKey(activeExam, courseName)}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.04 }}
+                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 hover:border-blue-100 hover:bg-white transition-all"
+                >
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-base text-slate-800">
+                        {courseName}
+                      </h3>
+                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        {progress.completed}/{progress.total}
+                      </span>
+                    </div>
+                    <div className="progress-bar mb-1">
+                      <motion.div
+                        className="progress-bar-fill"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress.percentage}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 mb-3">
+                      %{progress.percentage} tamamlandı
+                    </p>
+                    <CourseSolvedQuestionsInput
+                      label="Toplam çözülen soru"
+                      value={solvedCount}
+                      onChange={() => {}}
+                      disabled
+                    />
+                  </div>
+
+                  <div className="space-y-1 mt-4 max-h-64 overflow-y-auto pr-1">
+                    {visibleTopics.map((topic) => {
+                      const isCompleted = getTopicProgress(topic.id);
+                      const topicSolved = getTopicSolvedCount(
+                        solvedQuestionsByTopic,
+                        topic.id,
+                      );
+                      return (
                         <div
-                          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                          key={topic.id}
+                          className={`flex items-start gap-3 p-2.5 rounded-lg transition-all ${
                             isCompleted
-                              ? "bg-green-500 border-green-500"
-                              : "border-slate-300 bg-white"
+                              ? "bg-green-50/60 border border-green-100"
+                              : "hover:bg-white border border-transparent hover:border-slate-100"
                           }`}
                         >
-                          {isCompleted && (
-                            <FiCheck className="text-white text-[10px]" />
-                          )}
+                          <label className="relative mt-0.5 shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isCompleted}
+                              onChange={() =>
+                                onToggleCompletion(topic.id, !isCompleted)
+                              }
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                isCompleted
+                                  ? "bg-green-500 border-green-500"
+                                  : "border-slate-300 bg-white"
+                              }`}
+                            >
+                              {isCompleted && (
+                                <FiCheck className="text-white text-[10px]" />
+                              )}
+                            </div>
+                          </label>
+                          <span
+                            className={`flex-1 min-w-0 text-sm leading-snug ${
+                              isCompleted
+                                ? "line-through text-slate-400"
+                                : "text-slate-700"
+                            }`}
+                          >
+                            {topic.title}
+                          </span>
+                          <CourseSolvedQuestionsInput
+                            compact
+                            label="Çözülen soru"
+                            value={topicSolved}
+                            onChange={(count) =>
+                              onUpdateTopicSolvedQuestions(topic.id, count)
+                            }
+                          />
                         </div>
-                      </label>
-                      <span
-                        className={`flex-1 min-w-0 text-sm leading-snug ${
-                          isCompleted
-                            ? "line-through text-slate-400"
-                            : "text-slate-700"
-                        }`}
-                      >
-                        {topic.title}
+                      );
+                    })}
+                    <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-100/80 border border-slate-200 mt-2">
+                      <span className="flex-1 min-w-0 text-sm font-medium text-slate-600">
+                        Genel
                       </span>
                       <CourseSolvedQuestionsInput
                         compact
-                        label="Çözülen soru"
-                        value={topicSolved}
+                        label="Genel çözülen soru"
+                        value={generalSolved}
                         onChange={(count) =>
-                          onUpdateTopicSolvedQuestions(topic.id, count)
+                          onUpdateSolvedQuestions(activeExam, courseName, count)
                         }
                       />
                     </div>
-                  );
-                })}
-                <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-100/80 border border-slate-200 mt-2">
-                  <span className="flex-1 min-w-0 text-sm font-medium text-slate-600">
-                    Genel
-                  </span>
-                  <CourseSolvedQuestionsInput
-                    compact
-                    label="Genel çözülen soru"
-                    value={generalSolved}
-                    onChange={(count) =>
-                      onUpdateSolvedQuestions(activeExam, courseName, count)
-                    }
-                  />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                  </div>
+                </motion.div>
+              );
+            },
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -38,6 +38,7 @@ const StudentSchema = new Schema(
       index: true,
     },
     parentEmail: { type: String, default: "", lowercase: true, trim: true },
+    notes: { type: String, default: "", trim: true, maxlength: 1000 },
     topics: [TopicProgressSchema],
     weeklySelectedTopics: { type: [String], default: [] },
     solvedQuestionsByCourse: { type: Map, of: Number, default: {} },

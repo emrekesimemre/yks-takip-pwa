@@ -9,47 +9,60 @@ import ConfirmModal from "@/components/ConfirmModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
 import Link from "next/link";
-import { FiPlus, FiTrash2, FiUsers, FiArrowRight, FiTarget, FiEdit2 } from "react-icons/fi";
+import {
+  FiPlus,
+  FiTrash2,
+  FiUsers,
+  FiArrowRight,
+  FiTarget,
+  FiEdit2,
+  FiCalendar,
+  FiClock,
+} from "react-icons/fi";
 import { getOverallProgress } from "@/utils/curriculum";
 
 type DeleteTarget = { id: string; name: string };
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
-};
+const INACTIVE_DAYS = 7;
 
-const item = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+function daysSince(dateStr: string): number {
+  const updated = new Date(dateStr).getTime();
+  if (Number.isNaN(updated)) return 0;
+  return Math.floor((Date.now() - updated) / (24 * 60 * 60 * 1000));
+}
+
 
 export default function DashboardClient() {
-  const { students, setStudents, setAddModalOpen, setEditingStudent, removeStudent } =
-    useStudentStore();
+  const {
+    students,
+    setStudents,
+    setAddModalOpen,
+    setEditingStudent,
+    removeStudent,
+  } = useStudentStore();
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchStudents = async () => {
       try {
-        const res = await fetch("/api/students");
-        if (res.ok) {
-          const data = await res.json();
-          setStudents(data);
-        }
+        const res = await fetch("/api/students", { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!controller.signal.aborted) setStudents(data);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error("Öğrenciler çekilirken hata oluştu:", error);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
-    fetchStudents();
+    void fetchStudents();
+    return () => controller.abort();
   }, [setStudents]);
 
   const handleDeleteStudent = async () => {
@@ -127,16 +140,21 @@ export default function DashboardClient() {
           </button>
         </motion.div>
       ) : (
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {students.map((student) => {
             const progress = getOverallProgress(student.topics ?? []);
+            const weeklyCount = student.weeklySelectedTopics?.length ?? 0;
+            const inactiveDays = student.updatedAt
+              ? daysSince(student.updatedAt)
+              : 0;
+            const isInactive = inactiveDays >= INACTIVE_DAYS;
             return (
-              <motion.div key={student._id} variants={item}>
+              <motion.div
+                key={student._id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
                 <div className="card-premium group h-full overflow-hidden">
                   <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -147,8 +165,12 @@ export default function DashboardClient() {
                     </div>
                     <div className="flex-1 min-w-0" />
                     <div className="text-right shrink-0">
-                      <div className="text-xs text-slate-400 font-medium">İlerleme</div>
-                      <div className="text-lg font-bold text-blue-600">%{progress}</div>
+                      <div className="text-xs text-slate-400 font-medium">
+                        İlerleme
+                      </div>
+                      <div className="text-lg font-bold text-blue-600">
+                        %{progress}
+                      </div>
                     </div>
                     <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
                       <button
@@ -167,7 +189,10 @@ export default function DashboardClient() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setDeleteTarget({ id: student._id!, name: student.name });
+                          setDeleteTarget({
+                            id: student._id!,
+                            name: student.name,
+                          });
                         }}
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                         aria-label="Öğrenciyi sil"
@@ -187,8 +212,31 @@ export default function DashboardClient() {
                     </h3>
                     <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
                       <FiTarget className="text-blue-400 shrink-0" />
-                      <span className="truncate">{student.target || "Hedef belirtilmedi"}</span>
+                      <span className="truncate">
+                        {student.target || "Hedef belirtilmedi"}
+                      </span>
                     </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          weeklyCount > 0
+                            ? "bg-blue-50 text-blue-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        <FiCalendar className="text-[10px]" />
+                        {weeklyCount > 0
+                          ? `${weeklyCount} konu planlandı`
+                          : "Plan yapılmadı"}
+                      </span>
+                      {isInactive && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800">
+                          <FiClock className="text-[10px]" />
+                          {inactiveDays} gün önce güncellendi
+                        </span>
+                      )}
+                    </div>
 
                     <div className="mt-4 progress-bar">
                       <div
@@ -206,7 +254,7 @@ export default function DashboardClient() {
               </motion.div>
             );
           })}
-        </motion.div>
+        </div>
       )}
 
       <AddStudentModal />
@@ -225,7 +273,6 @@ export default function DashboardClient() {
         onConfirm={handleDeleteStudent}
         onCancel={() => !isDeleting && setDeleteTarget(null)}
       />
-
     </PageTransition>
   );
 }

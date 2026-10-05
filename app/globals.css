@@ -199,6 +199,12 @@ textarea:disabled,
   box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15);
 }
 
+.input-premium.input-with-icon {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-left: 2.75rem;
+}
+
 /* iOS zooms the page when a focused field is under 16px. Tailwind text-sm/text-xs would otherwise win. */
 @media (hover: none) and (pointer: coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="hidden"]):not([type="image"]),

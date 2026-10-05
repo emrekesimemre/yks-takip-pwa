@@ -19,10 +19,7 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
   return (
     <header className="glass-header sticky top-0 z-40 print:hidden">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 min-w-0">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 shrink-0"
-        >
+        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
           <BrandIconMark size={44} className="shrink-0" />
           <div className="hidden sm:block">
             <div className="font-bold text-lg text-slate-900 tracking-tight leading-none">

@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       target: parsed.data.target,
       parentEmail,
+      notes: parsed.data.notes,
       teacherEmail: auth.email,
       topics: initialTopics,
       weeklySelectedTopics: [],
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       mockExams: [],
     });
 
-    return NextResponse.json(newStudent, { status: 201 });
+    return NextResponse.json(newStudent.toJSON(), { status: 201 });
   } catch (error) {
     console.error("Öğrenci eklenirken hata:", error);
     return jsonError("Öğrenci eklenirken hata oluştu.", 500);
