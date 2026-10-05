@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiShield, FiTrash2, FiUserPlus } from "react-icons/fi";
+import { FiEdit2, FiShield, FiTrash2, FiUserPlus } from "react-icons/fi";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/ConfirmModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { parseStaffName, STAFF_NAME_MAX } from "@/utils/staff-label";
 
 type StaffRole = "admin" | "teacher";
 
 type StaffMember = {
   email: string;
+  name: string;
   roles: StaffRole[];
   lockedAdmin: boolean;
 };
@@ -29,11 +31,14 @@ export default function AdminStaffPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [teacherRole, setTeacherRole] = useState(true);
   const [adminRole, setAdminRole] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
   const roleUpdateGen = useRef(0);
 
   useEffect(() => {
@@ -41,7 +46,9 @@ export default function AdminStaffPanel() {
 
     const fetchStaff = async () => {
       try {
-        const res = await fetch("/api/admin/staff", { signal: controller.signal });
+        const res = await fetch("/api/admin/staff", {
+          signal: controller.signal,
+        });
         const body = (await res.json()) as StaffResponse & { error?: string };
         if (!res.ok) {
           throw new Error(body.error || "Personel listesi alınamadı.");
@@ -50,7 +57,9 @@ export default function AdminStaffPanel() {
       } catch (loadError: unknown) {
         if (controller.signal.aborted) return;
         setError(
-          loadError instanceof Error ? loadError.message : "Personel listesi alınamadı.",
+          loadError instanceof Error
+            ? loadError.message
+            : "Personel listesi alınamadı.",
         );
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
@@ -67,6 +76,12 @@ export default function AdminStaffPanel() {
   };
 
   const addStaff = async () => {
+    const parsedName = parseStaffName(name);
+    if (!parsedName.ok) {
+      setError(parsedName.message);
+      return;
+    }
+
     const roles: StaffRole[] = [
       ...(adminRole ? (["admin"] as const) : []),
       ...(teacherRole ? (["teacher"] as const) : []),
@@ -82,12 +97,13 @@ export default function AdminStaffPanel() {
       const res = await fetch("/api/admin/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, roles }),
+        body: JSON.stringify({ email, name: parsedName.name, roles }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || "Personel eklenemedi.");
       applyResponse(body);
       setEmail("");
+      setName("");
       setTeacherRole(true);
       setAdminRole(false);
       if (body.emailSent) {
@@ -96,7 +112,9 @@ export default function AdminStaffPanel() {
         toast.warning("Personel eklendi, mail gönderilemedi.");
       }
     } catch (saveError: unknown) {
-      setError(saveError instanceof Error ? saveError.message : "Personel eklenemedi.");
+      setError(
+        saveError instanceof Error ? saveError.message : "Personel eklenemedi.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -128,7 +146,11 @@ export default function AdminStaffPanel() {
       }
     } catch (saveError: unknown) {
       if (gen !== roleUpdateGen.current) return;
-      setError(saveError instanceof Error ? saveError.message : "Roller güncellenemedi.");
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Roller güncellenemedi.",
+      );
     } finally {
       if (gen === roleUpdateGen.current) {
         setPendingEmail(null);
@@ -151,7 +173,44 @@ export default function AdminStaffPanel() {
       applyResponse(body);
       setDeleteTarget(null);
     } catch (saveError: unknown) {
-      setError(saveError instanceof Error ? saveError.message : "Personel silinemedi.");
+      setError(
+        saveError instanceof Error ? saveError.message : "Personel silinemedi.",
+      );
+    } finally {
+      setPendingEmail(null);
+    }
+  };
+
+  const saveName = async (member: StaffMember) => {
+    const parsedName = parseStaffName(draftName);
+    if (!parsedName.ok) {
+      setError(parsedName.message);
+      return;
+    }
+    if (parsedName.name === member.name) {
+      setEditingEmail(null);
+      return;
+    }
+
+    setPendingEmail(member.email);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/staff", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: member.email, name: parsedName.name }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Ad soyad güncellenemedi.");
+      applyResponse(body);
+      setEditingEmail(null);
+      toast.success("Ad soyad güncellendi.");
+    } catch (saveError: unknown) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Ad soyad güncellenemedi.",
+      );
     } finally {
       setPendingEmail(null);
     }
@@ -169,28 +228,59 @@ export default function AdminStaffPanel() {
             <FiUserPlus className="text-xl text-violet-600" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Yeni personel</h2>
+            <h2 className="text-base font-bold text-slate-900">
+              Yeni personel
+            </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Giriş Google hesabıyla yapılır. E-posta, kullanıcının Google adresinin aynısı olmalıdır.
+              Giriş Google hesabıyla yapılır. E-posta, kullanıcının Google
+              adresinin aynısı olmalıdır.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-end">
-          <div>
-            <label htmlFor="staff-email" className="block text-sm font-semibold text-slate-700 mb-2">
-              E-posta
-            </label>
-            <input
-              id="staff-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="ornek@gmail.com"
-              className="w-full min-h-13 px-4 py-3 rounded-xl border border-slate-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
-            />
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void addStaff();
+          }}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="staff-name"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Ad soyad
+              </label>
+              <input
+                id="staff-name"
+                type="text"
+                value={name}
+                maxLength={STAFF_NAME_MAX}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Örn: Ayşe Yılmaz"
+                className="w-full min-h-13 px-4 py-3 rounded-xl border border-slate-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="staff-email"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                E-posta
+              </label>
+              <input
+                id="staff-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="ornek@gmail.com"
+                className="w-full min-h-13 px-4 py-3 rounded-xl border border-slate-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4 lg:pb-3">
+          <div className="flex flex-wrap items-center gap-4">
             <RoleCheck
               label="Öğretmen"
               checked={teacherRole}
@@ -202,15 +292,16 @@ export default function AdminStaffPanel() {
               onChange={setAdminRole}
             />
             <button
-              type="button"
-              onClick={addStaff}
-              disabled={isSaving || email.trim().length === 0}
+              type="submit"
+              disabled={
+                isSaving || email.trim().length === 0 || name.trim().length === 0
+              }
               className="btn-primary disabled:opacity-60"
             >
               {isSaving ? "Ekleniyor..." : "Ekle"}
             </button>
           </div>
-        </div>
+        </form>
       </div>
 
       {error && (
@@ -236,11 +327,76 @@ export default function AdminStaffPanel() {
                 className="card-premium border border-slate-100 p-4 sm:p-5"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <FiShield className="text-violet-500 shrink-0" />
-                      <p className="font-semibold text-slate-900 truncate">{member.email}</p>
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    {editingEmail === member.email ? (
+                      <form
+                        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void saveName(member);
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={draftName}
+                          maxLength={STAFF_NAME_MAX}
+                          autoFocus
+                          aria-label="Ad soyad"
+                          placeholder="Örn: Ayşe Yılmaz"
+                          onChange={(event) => setDraftName(event.target.value)}
+                          className="w-full sm:max-w-sm min-h-13 px-4 py-3 rounded-xl border border-slate-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={busy || draftName.trim().length === 0}
+                            className="btn-primary disabled:opacity-60"
+                          >
+                            Kaydet
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setEditingEmail(null)}
+                            className="btn-secondary"
+                          >
+                            Vazgeç
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FiShield className="text-violet-500 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 truncate">
+                            {member.name || member.email}
+                          </p>
+                          {member.name ? (
+                            <p className="text-xs text-slate-500 truncate">
+                              {member.email}
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          title={
+                            member.name ? "Ad soyadı düzenle" : "Ad soyad ekle"
+                          }
+                          aria-label={
+                            member.name ? "Ad soyadı düzenle" : "Ad soyad ekle"
+                          }
+                          onClick={() => {
+                            setDraftName(member.name ?? "");
+                            setEditingEmail(member.email);
+                            setError("");
+                          }}
+                          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-violet-700 hover:bg-violet-50 disabled:opacity-40"
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {member.roles.map((role) => (
                         <span
@@ -312,11 +468,7 @@ export default function AdminStaffPanel() {
       <ConfirmModal
         isOpen={deleteTarget !== null}
         title="Personeli kaldır"
-        message={
-          deleteTarget
-            ? `${deleteTarget.email} hesabının panele girişi kapanacak. Öğrenci kayıtları silinmez.`
-            : ""
-        }
+        message={deleteTarget ? staffRemovalMessage(deleteTarget) : ""}
         confirmLabel="Kaldır"
         variant="danger"
         isLoading={pendingEmail === deleteTarget?.email}
@@ -325,6 +477,13 @@ export default function AdminStaffPanel() {
       />
     </div>
   );
+}
+
+function staffRemovalMessage(member: StaffMember) {
+  const label = member.name
+    ? `${member.name} (${member.email})`
+    : member.email;
+  return `${label} hesabının panele girişi kapanacak. Öğrenci kayıtları silinmez.`;
 }
 
 function adminCheckboxTitle(lockedAdmin: boolean, isSelf: boolean) {
@@ -347,7 +506,13 @@ type RoleCheckProps = {
   onChange: (checked: boolean) => void;
 };
 
-function RoleCheck({ label, checked, disabled, title, onChange }: Readonly<RoleCheckProps>) {
+function RoleCheck({
+  label,
+  checked,
+  disabled,
+  title,
+  onChange,
+}: Readonly<RoleCheckProps>) {
   return (
     <label
       title={title}

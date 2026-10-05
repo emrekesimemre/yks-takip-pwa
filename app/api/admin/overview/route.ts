@@ -1,7 +1,7 @@
 import { jsonError } from "@/lib/api";
 import { requireAdminSession } from "@/lib/api-auth";
 import connectMongo from "@/lib/mongo";
-import { listTeacherEmails, publicTeacherEmail } from "@/lib/staff";
+import { listTeachers, publicTeacherEmail } from "@/lib/staff";
 import Student from "@/models/Student";
 import type { MockExam } from "@/store/useStudentStore";
 import {
@@ -92,7 +92,7 @@ export async function GET() {
       };
     });
 
-    const teacherEmails = await listTeacherEmails();
+    const teachers = await listTeachers();
     const averageProgress =
       overview.length === 0
         ? 0
@@ -103,11 +103,11 @@ export async function GET() {
     return NextResponse.json({
       summary: {
         totalStudents: overview.length,
-        totalTeachers: teacherEmails.length,
+        totalTeachers: teachers.length,
         averageProgress,
         truncated,
       },
-      teachers: teacherEmails,
+      teachers,
       students: overview,
     });
   } catch (error) {

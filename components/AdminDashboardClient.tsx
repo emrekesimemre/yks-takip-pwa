@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
@@ -18,6 +18,7 @@ import {
   FiDownload,
 } from "react-icons/fi";
 import AdminStaffPanel from "@/components/AdminStaffPanel";
+import { formatTeacherLabel } from "@/utils/staff-label";
 
 type AdminTab = "overview" | "exams" | "staff";
 
@@ -35,6 +36,11 @@ type StudentOverview = {
   updatedAt: string | null;
 };
 
+type TeacherProfile = {
+  email: string;
+  name: string;
+};
+
 type OverviewResponse = {
   summary: {
     totalStudents: number;
@@ -42,9 +48,27 @@ type OverviewResponse = {
     averageProgress: number;
     truncated?: boolean;
   };
-  teachers: string[];
+  teachers: TeacherProfile[];
   students: StudentOverview[];
 };
+
+function readTeachers(value: unknown): TeacherProfile[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string") return [{ email: item, name: "" }];
+    if (
+      item &&
+      typeof item === "object" &&
+      "email" in item &&
+      typeof item.email === "string"
+    ) {
+      const name =
+        "name" in item && typeof item.name === "string" ? item.name : "";
+      return [{ email: item.email, name }];
+    }
+    return [];
+  });
+}
 
 const tabs: {
   id: AdminTab;
@@ -118,11 +142,6 @@ function downloadStudentsCsv(
   URL.revokeObjectURL(url);
 }
 
-function formatTeacherLabel(email: string): string {
-  const localPart = email.split("@")[0] ?? email;
-  return localPart.replace(/\./g, " ");
-}
-
 function ProgressBar({ value }: { value: number }) {
   const color =
     value >= 70 ? "bg-green-500" : value >= 40 ? "bg-amber-500" : "bg-red-400";
@@ -159,41 +178,64 @@ export default function AdminDashboardClient({
   const [teacherFilter, setTeacherFilter] = useState("all");
 
   useEffect(() => {
+    if (activeTab === "staff") return;
+    const controller = new AbortController();
+
     const fetchOverview = async () => {
       try {
-        const res = await fetch("/api/admin/overview");
+        const res = await fetch("/api/admin/overview", {
+          signal: controller.signal,
+        });
         if (res.ok) {
-          setData(await res.json());
+          const body = await res.json();
+          setData({ ...body, teachers: readTeachers(body.teachers) });
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error("Admin overview yüklenemedi:", error);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
-    fetchOverview();
-  }, []);
+    void fetchOverview();
+    return () => controller.abort();
+  }, [activeTab]);
+
+  const teacherNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const teacher of data?.teachers ?? []) {
+      if (teacher.email) map.set(teacher.email, teacher.name);
+    }
+    return map;
+  }, [data]);
+
+  const labelFor = useCallback(
+    (email: string) => formatTeacherLabel(email, teacherNames.get(email)),
+    [teacherNames],
+  );
 
   const teachers = useMemo(() => {
     if (!data) return [];
-    const emails = new Set(data.teachers);
+    const emails = new Set(data.teachers.map((teacher) => teacher.email));
     for (const student of data.students) {
       if (student.teacherEmail) emails.add(student.teacherEmail);
     }
-    return [...emails].sort((a, b) => a.localeCompare(b, "tr"));
-  }, [data]);
+    return [...emails].sort((a, b) =>
+      labelFor(a).localeCompare(labelFor(b), "tr"),
+    );
+  }, [data, labelFor]);
 
   const teacherOptions = useMemo(() => {
     return [
       { value: "all", label: "Tüm öğretmenler" },
       ...teachers.map((email) => ({
         value: email,
-        label: formatTeacherLabel(email),
+        label: labelFor(email),
         description: email,
       })),
     ];
-  }, [teachers]);
+  }, [teachers, labelFor]);
 
   const filteredStudents = useMemo(() => {
     if (!data) return [];
@@ -207,11 +249,12 @@ export default function AdminDashboardClient({
         query.length === 0 ||
         student.name.toLowerCase().includes(query) ||
         student.target.toLowerCase().includes(query) ||
-        student.teacherEmail.toLowerCase().includes(query);
+        student.teacherEmail.toLowerCase().includes(query) ||
+        labelFor(student.teacherEmail).toLowerCase().includes(query);
 
       return matchesTeacher && matchesSearch;
     });
-  }, [data, search, teacherFilter]);
+  }, [data, search, teacherFilter, labelFor]);
 
   const groupedByTeacher = useMemo(() => {
     const groups = new Map<string, StudentOverview[]>();
@@ -222,8 +265,10 @@ export default function AdminDashboardClient({
       groups.set(student.teacherEmail, existing);
     });
 
-    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredStudents]);
+    return [...groups.entries()].sort(([a], [b]) =>
+      labelFor(a).localeCompare(labelFor(b), "tr"),
+    );
+  }, [filteredStudents, labelFor]);
 
   return (
     <PageTransition>
@@ -283,7 +328,7 @@ export default function AdminDashboardClient({
                 onTeacherFilterChange={setTeacherFilter}
                 filteredStudents={filteredStudents}
                 groupedByTeacher={groupedByTeacher}
-                formatTeacherLabel={formatTeacherLabel}
+                formatTeacherLabel={labelFor}
               />
             )}
             {activeTab === "exams" && (
@@ -291,7 +336,7 @@ export default function AdminDashboardClient({
                 teacherFilter={teacherFilter}
                 teacherOptions={teacherOptions}
                 onTeacherFilterChange={setTeacherFilter}
-                formatTeacherLabel={formatTeacherLabel}
+                formatTeacherLabel={labelFor}
               />
             )}
             {canManageStaff && activeTab === "staff" && <AdminStaffPanel />}

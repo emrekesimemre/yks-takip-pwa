@@ -1,12 +1,19 @@
 import connectMongo from "@/lib/mongo";
 import Staff from "@/models/Staff";
+import { parseStaffName } from "@/utils/staff-label";
 
 export const STAFF_ROLES = ["admin", "teacher"] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
 export type StaffRecord = {
   email: string;
+  name: string;
   roles: StaffRole[];
+};
+
+export type TeacherProfile = {
+  email: string;
+  name: string;
 };
 
 export type StaffListItem = StaffRecord & {
@@ -104,7 +111,10 @@ export function invalidateStaffCache() {
   cache = null;
 }
 
-function isBootstrapAdmin(email: string, bootstrapAdmins = getBootstrapAdminEmails()) {
+function isBootstrapAdmin(
+  email: string,
+  bootstrapAdmins = getBootstrapAdminEmails(),
+) {
   return bootstrapAdmins.includes(email);
 }
 
@@ -148,8 +158,7 @@ export function assertCanUpdateRoles(input: {
   if (!current && !locked) return "Personel bulunamadı.";
   if (input.nextRoles.length === 0) return "En az bir rol seçin.";
 
-  const currentlyAdmin =
-    locked || Boolean(current?.roles.includes("admin"));
+  const currentlyAdmin = locked || Boolean(current?.roles.includes("admin"));
   const willBeAdmin = locked || input.nextRoles.includes("admin");
 
   if (currentlyAdmin && !willBeAdmin && input.actorEmail === input.email) {
@@ -193,17 +202,27 @@ export function assertCanDelete(input: {
   return null;
 }
 
-function withLockedAdmin(email: string, roles: StaffRole[], bootstrapAdmins: string[]) {
+function withLockedAdmin(
+  email: string,
+  roles: StaffRole[],
+  bootstrapAdmins: string[],
+) {
   if (!isBootstrapAdmin(email, bootstrapAdmins) || roles.includes("admin")) {
     return roles;
   }
   return normalizeRoles(["admin", ...roles]) ?? ["admin"];
 }
 
+function storedName(value: unknown): string {
+  const parsed = parseStaffName(value);
+  return parsed.ok ? parsed.name : "";
+}
+
 async function readRecords(): Promise<StaffRecord[]> {
-  const docs = await Staff.find().select("email roles").lean();
+  const docs = await Staff.find().select("email name roles").lean();
   return docs.map((doc) => ({
     email: doc.email,
+    name: storedName(doc.name),
     roles: normalizeRoles(doc.roles) ?? [],
   }));
 }
@@ -226,7 +245,9 @@ async function ensureStaffSeeded() {
               email,
               [
                 ...(adminEmails.includes(email) ? (["admin"] as const) : []),
-                ...(teacherEmails.includes(email) ? (["teacher"] as const) : []),
+                ...(teacherEmails.includes(email)
+                  ? (["teacher"] as const)
+                  : []),
               ],
               adminEmails,
             ),
@@ -298,9 +319,7 @@ export async function resolveStaffAccess(email: string | null | undefined) {
   };
 }
 
-export async function safeResolveStaffAccess(
-  email: string | null | undefined,
-) {
+export async function safeResolveStaffAccess(email: string | null | undefined) {
   try {
     const access = await resolveStaffAccess(email);
     return { ...access, error: false as const };
@@ -310,15 +329,15 @@ export async function safeResolveStaffAccess(
   }
 }
 
-export async function listTeacherEmails(): Promise<string[]> {
+export async function listTeachers(): Promise<TeacherProfile[]> {
   const map = await getRoleMap();
   return [...map.values()]
     .filter(
       (record) =>
         record.roles.includes("teacher") && !isHiddenStaffEmail(record.email),
     )
-    .map((record) => record.email)
-    .sort((a, b) => a.localeCompare(b, "tr"));
+    .map((record) => ({ email: record.email, name: record.name }))
+    .sort((a, b) => a.email.localeCompare(b.email, "tr"));
 }
 
 export async function listStaff(): Promise<StaffListItem[]> {
@@ -336,19 +355,26 @@ export async function listStaff(): Promise<StaffListItem[]> {
       roles: withLockedAdmin(record.email, record.roles, bootstrapAdmins),
       lockedAdmin: isBootstrapAdmin(record.email, bootstrapAdmins),
     }))
-    .sort((a, b) => a.email.localeCompare(b.email, "tr"));
+    .sort((a, b) => {
+      const aLabel = a.name || a.email;
+      const bLabel = b.name || b.email;
+      return aLabel.localeCompare(bLabel, "tr");
+    });
 }
 
 export async function createStaff(
   actorEmailInput: string,
   emailInput: unknown,
+  nameInput: unknown,
   rolesInput: unknown,
 ) {
   const actorEmail = normalizeEmail(actorEmailInput);
   const email = normalizeEmail(emailInput);
+  const parsedName = parseStaffName(nameInput);
   const roles = normalizeRoles(rolesInput);
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
   assertBootstrapActor(actorEmail);
+  if (!parsedName.ok) throw new StaffError(parsedName.message, 400);
   if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
   if (isHiddenStaffEmail(email)) {
     throw new StaffError("Bu e-posta zaten kayıtlı.", 409);
@@ -368,8 +394,36 @@ export async function createStaff(
   const bootstrapAdmins = getBootstrapAdminEmails();
   await Staff.create({
     email,
+    name: parsedName.name,
     roles: withLockedAdmin(email, roles, bootstrapAdmins),
   });
+  invalidateStaffCache();
+}
+
+export async function updateStaffName(
+  actorEmailInput: string,
+  emailInput: unknown,
+  nameInput: unknown,
+) {
+  const actorEmail = normalizeEmail(actorEmailInput);
+  const email = normalizeEmail(emailInput);
+  const parsedName = parseStaffName(nameInput);
+  if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);
+  assertBootstrapActor(actorEmail);
+  if (!email) throw new StaffError("Geçerli bir e-posta girin.", 400);
+  if (!parsedName.ok) throw new StaffError(parsedName.message, 400);
+  if (isHiddenStaffEmail(email)) {
+    throw new StaffError("Personel bulunamadı.", 404);
+  }
+
+  await ensureStaffSeeded();
+  await connectMongo();
+  await syncBootstrapAdmins();
+
+  const current = await Staff.findOne({ email }).select("email").lean();
+  if (!current) throw new StaffError("Personel bulunamadı.", 404);
+
+  await Staff.updateOne({ email }, { $set: { name: parsedName.name } });
   invalidateStaffCache();
 }
 
@@ -403,7 +457,10 @@ export async function updateStaffRoles(
     bootstrapAdmins,
   });
   if (message) {
-    throw new StaffError(message, message === "Personel bulunamadı." ? 404 : 400);
+    throw new StaffError(
+      message,
+      message === "Personel bulunamadı." ? 404 : 400,
+    );
   }
 
   await Staff.updateOne(
@@ -413,7 +470,10 @@ export async function updateStaffRoles(
   invalidateStaffCache();
 }
 
-export async function deleteStaff(actorEmailInput: string, emailInput: unknown) {
+export async function deleteStaff(
+  actorEmailInput: string,
+  emailInput: unknown,
+) {
   const actorEmail = normalizeEmail(actorEmailInput);
   const email = normalizeEmail(emailInput);
   if (!actorEmail) throw new StaffError("Oturum geçersiz.", 401);

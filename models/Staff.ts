@@ -9,6 +9,12 @@ const StaffSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    name: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: "",
+    },
     roles: {
       type: [{ type: String, enum: ["admin", "teacher"] }],
       required: true,

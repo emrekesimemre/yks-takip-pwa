@@ -55,11 +55,16 @@ function emailShell(body: string) {
 export function staffInviteHtml(input: {
   roles: StaffRole[];
   actorEmail: string;
+  staffName?: string;
   kind: "invite" | "update";
 }) {
   const siteUrl = getPublicSiteUrl();
   const roles = escapeHtml(formatRoles(input.roles));
   const actor = escapeHtml(input.actorEmail);
+  const staffName = input.staffName?.trim();
+  const greeting = staffName
+    ? `<p style="margin:0 0 12px;line-height:1.5;">Merhaba ${escapeHtml(staffName)},</p>`
+    : "";
   const heading =
     input.kind === "invite"
       ? "YKS Takip paneline eklendiniz"
@@ -72,6 +77,7 @@ export function staffInviteHtml(input: {
   return emailShell(`
     <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#4f46e5;">YKS Takip</p>
     <h1 style="margin:0 0 16px;font-size:22px;">${heading}</h1>
+    ${greeting}
     <p style="margin:0 0 12px;line-height:1.5;">${intro}</p>
     <p style="margin:0 0 12px;line-height:1.5;">Giriş, bu mailin geldiği Gmail adresiyle Google üzerinden yapılır.</p>
     <p style="margin:0 0 20px;">

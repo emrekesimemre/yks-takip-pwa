@@ -11,6 +11,7 @@ import {
   listStaff,
   normalizeEmail,
   StaffError,
+  updateStaffName,
   updateStaffRoles,
 } from "@/lib/staff";
 
@@ -57,9 +58,13 @@ export async function POST(req: Request) {
 
     const parsedBody = await readJsonBody(req);
     if (!parsedBody.ok) return parsedBody.response;
-    const body = parsedBody.data as { email?: unknown; roles?: unknown };
+    const body = parsedBody.data as {
+      email?: unknown;
+      name?: unknown;
+      roles?: unknown;
+    };
 
-    await createStaff(auth.email, body.email, body.roles);
+    await createStaff(auth.email, body.email, body.name, body.roles);
     const staff = await listStaff();
     const invitedEmail = normalizeEmail(body.email);
     const created = staff.find((member) => member.email === invitedEmail);
@@ -71,6 +76,7 @@ export async function POST(req: Request) {
         html: staffInviteHtml({
           roles: created.roles,
           actorEmail: auth.email,
+          staffName: created.name,
           kind: "invite",
         }),
         replyTo: auth.email,
@@ -101,7 +107,17 @@ export async function PATCH(req: Request) {
 
     const parsedBody = await readJsonBody(req);
     if (!parsedBody.ok) return parsedBody.response;
-    const body = parsedBody.data as { email?: unknown; roles?: unknown };
+    const body = parsedBody.data as {
+      email?: unknown;
+      name?: unknown;
+      roles?: unknown;
+    };
+
+    if (body.name !== undefined && body.roles === undefined) {
+      await updateStaffName(auth.email, body.email, body.name);
+      const staff = await listStaff();
+      return NextResponse.json({ staff, currentEmail: auth.email });
+    }
 
     await updateStaffRoles(auth.email, body.email, body.roles);
     const staff = await listStaff();
@@ -115,6 +131,7 @@ export async function PATCH(req: Request) {
         html: staffInviteHtml({
           roles: updated.roles,
           actorEmail: auth.email,
+          staffName: updated.name,
           kind: "update",
         }),
         replyTo: auth.email,

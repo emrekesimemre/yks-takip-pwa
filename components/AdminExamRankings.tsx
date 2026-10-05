@@ -15,6 +15,7 @@ import {
   type ExamGroup,
   type ExamRankingEntry,
 } from "@/utils/deneme";
+import { formatTeacherLabel as formatTeacherLabelDefault } from "@/utils/staff-label";
 
 type RankingsResponse = {
   examGroups: ExamGroup[];
@@ -25,11 +26,6 @@ type Props = {
   teacherFilter: string;
   formatTeacherLabel: (email: string) => string;
 };
-
-function formatTeacherLabelDefault(email: string): string {
-  const localPart = email.split("@")[0] ?? email;
-  return localPart.replace(/\./g, " ");
-}
 
 function formatGroupLabel(group: ExamGroup): string {
   return `${group.type} · ${formatDate(group.date)} · ${group.studentCount} öğrenci`;
@@ -168,8 +164,7 @@ export default function AdminExamRankings({
     (group) => group.key === activeGroupKey,
   );
 
-  const showExamNames =
-    selectedGroup != null && selectedGroup.names.length > 1;
+  const showExamNames = selectedGroup != null && selectedGroup.names.length > 1;
 
   const rankings = useMemo(() => {
     if (!data || !activeGroupKey) return [];
@@ -202,8 +197,9 @@ export default function AdminExamRankings({
 
     return {
       average:
-        Math.round((nets.reduce((sum, net) => sum + net, 0) / nets.length) * 10) /
-        10,
+        Math.round(
+          (nets.reduce((sum, net) => sum + net, 0) / nets.length) * 10,
+        ) / 10,
       highest: Math.max(...nets),
       lowest: Math.min(...nets),
     };
@@ -270,37 +266,37 @@ export default function AdminExamRankings({
               open={isDateOpen}
               className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
             >
-                <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
-                  {dateOptions.map((option) => {
-                    const isSelected = option.value === dateFilter;
+              <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
+                {dateOptions.map((option) => {
+                  const isSelected = option.value === dateFilter;
 
-                    return (
-                      <li key={option.value}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => {
-                            setDateFilter(option.value);
-                            setIsDateOpen(false);
-                          }}
-                          className={`w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
-                            isSelected
-                              ? "bg-violet-50 text-violet-800"
-                              : "hover:bg-slate-50 text-slate-800"
-                          }`}
-                        >
-                          <span className="min-w-0 truncate text-base font-medium">
-                            {option.label}
-                          </span>
-                          {isSelected && (
-                            <FiCheck className="text-lg text-violet-600 shrink-0" />
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                  return (
+                    <li key={option.value}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          setDateFilter(option.value);
+                          setIsDateOpen(false);
+                        }}
+                        className={`w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+                          isSelected
+                            ? "bg-violet-50 text-violet-800"
+                            : "hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <span className="min-w-0 truncate text-base font-medium">
+                          {option.label}
+                        </span>
+                        {isSelected && (
+                          <FiCheck className="text-lg text-violet-600 shrink-0" />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </DropdownPanel>
           </div>
 
@@ -335,47 +331,47 @@ export default function AdminExamRankings({
               open={isGroupOpen && filteredGroups.length > 0}
               className="absolute z-20 left-0 right-0 mt-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
             >
-                <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
-                  {filteredGroups.map((group) => {
-                    const isSelected = group.key === activeGroupKey;
+              <ul role="listbox" className="max-h-72 overflow-y-auto py-2">
+                {filteredGroups.map((group) => {
+                  const isSelected = group.key === activeGroupKey;
 
-                    return (
-                      <li key={group.key}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => {
-                            setSelectedGroupKey(group.key);
-                            setIsGroupOpen(false);
-                          }}
-                          className={`w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
-                            isSelected
-                              ? "bg-violet-50 text-violet-800"
-                              : "hover:bg-slate-50 text-slate-800"
-                          }`}
-                        >
-                          <span className="min-w-0">
-                            <span className="block text-base font-medium truncate">
-                              {group.type} · {formatDate(group.date)}
-                            </span>
-                            <span className="block text-xs text-slate-400 mt-0.5">
-                              {group.studentCount} öğrenci
-                              {formatGroupNames(group)
-                                ? ` · İsimler: ${formatGroupNames(group)}`
-                                : group.names[0]
-                                  ? ` · ${group.names[0]}`
-                                  : ""}
-                            </span>
+                  return (
+                    <li key={group.key}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          setSelectedGroupKey(group.key);
+                          setIsGroupOpen(false);
+                        }}
+                        className={`w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+                          isSelected
+                            ? "bg-violet-50 text-violet-800"
+                            : "hover:bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-base font-medium truncate">
+                            {group.type} · {formatDate(group.date)}
                           </span>
-                          {isSelected && (
-                            <FiCheck className="text-lg text-violet-600 shrink-0" />
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                          <span className="block text-xs text-slate-400 mt-0.5">
+                            {group.studentCount} öğrenci
+                            {formatGroupNames(group)
+                              ? ` · İsimler: ${formatGroupNames(group)}`
+                              : group.names[0]
+                                ? ` · ${group.names[0]}`
+                                : ""}
+                          </span>
+                        </span>
+                        {isSelected && (
+                          <FiCheck className="text-lg text-violet-600 shrink-0" />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </DropdownPanel>
           </div>
         </div>
@@ -385,7 +381,9 @@ export default function AdminExamRankings({
         <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/60">
           <p className="text-xs text-amber-800">
             Bu deneme farklı isimlerle kaydedilmiş:{" "}
-            <span className="font-medium">{formatGroupNames(selectedGroup)}</span>
+            <span className="font-medium">
+              {formatGroupNames(selectedGroup)}
+            </span>
           </p>
         </div>
       )}
@@ -430,9 +428,7 @@ export default function AdminExamRankings({
               <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-100">
                 <th className="px-5 py-3 w-16">Sıra</th>
                 <th className="px-5 py-3">Öğrenci</th>
-                {showExamNames && (
-                  <th className="px-5 py-3">Kayıtlı İsim</th>
-                )}
+                {showExamNames && <th className="px-5 py-3">Kayıtlı İsim</th>}
                 <th className="px-5 py-3">Öğretmen</th>
                 <th className="px-5 py-3 text-right">Net</th>
               </tr>
@@ -456,7 +452,9 @@ export default function AdminExamRankings({
                   </td>
                   {showExamNames && (
                     <td className="px-5 py-4">
-                      <span className="text-sm text-slate-600">{entry.examName}</span>
+                      <span className="text-sm text-slate-600">
+                        {entry.examName}
+                      </span>
                     </td>
                   )}
                   <td className="px-5 py-4">
