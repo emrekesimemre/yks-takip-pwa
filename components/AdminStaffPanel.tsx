@@ -293,9 +293,10 @@ export default function AdminStaffPanel() {
             />
             <button
               type="submit"
-              disabled={
+              /* disabled={
                 isSaving || email.trim().length === 0 || name.trim().length === 0
-              }
+              } */
+              disabled={true}
               className="btn-primary disabled:opacity-60"
             >
               {isSaving ? "Ekleniyor..." : "Ekle"}
@@ -480,9 +481,7 @@ export default function AdminStaffPanel() {
 }
 
 function staffRemovalMessage(member: StaffMember) {
-  const label = member.name
-    ? `${member.name} (${member.email})`
-    : member.email;
+  const label = member.name ? `${member.name} (${member.email})` : member.email;
   return `${label} hesabının panele girişi kapanacak. Öğrenci kayıtları silinmez.`;
 }
 
