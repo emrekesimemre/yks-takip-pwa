@@ -702,7 +702,6 @@ export default function StudentDetailClient({
         field={currentStudent.field}
         target={currentStudent.target}
         parentEmail={currentStudent.parentEmail}
-        parentPhone={currentStudent.parentPhone}
         reportToken={currentStudent.reportToken}
         topics={currentStudent.topics}
         solvedQuestionsByCourse={solvedQuestions}
@@ -710,9 +709,6 @@ export default function StudentDetailClient({
         mockExams={mockExams}
         onParentEmailSaved={(savedParentEmail) => {
           updateCurrentStudent({ parentEmail: savedParentEmail });
-        }}
-        onParentPhoneSaved={(savedParentPhone) => {
-          updateCurrentStudent({ parentPhone: savedParentPhone });
         }}
         onReportTokenSaved={(savedToken) => {
           updateCurrentStudent({ reportToken: savedToken });

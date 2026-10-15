@@ -30,14 +30,12 @@ type Props = {
   field?: string;
   target?: string;
   parentEmail?: string;
-  parentPhone?: string;
   reportToken?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   mockExams?: MockExam[];
   onParentEmailSaved?: (parentEmail: string) => void;
-  onParentPhoneSaved?: (parentPhone: string) => void;
   onReportTokenSaved?: (reportToken: string) => void;
 };
 
@@ -75,20 +73,17 @@ function DevelopmentReportBody({
   field,
   target,
   parentEmail = "",
-  parentPhone = "",
   reportToken = "",
   topics,
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
   mockExams = [],
   onParentEmailSaved,
-  onParentPhoneSaved,
   onReportTokenSaved,
 }: Readonly<Props>) {
   const transition = useSoftTransition();
   const reportRef = useRef<HTMLDivElement>(null);
   const [emailInput, setEmailInput] = useState(parentEmail);
-  const [phoneInput, setPhoneInput] = useState(parentPhone);
   const [activeToken, setActiveToken] = useState(reportToken);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -140,29 +135,18 @@ function DevelopmentReportBody({
 
   const handleWhatsAppSendPdf = async () => {
     if (!reportRef.current) return;
-    const trimmedPhone = phoneInput.trim();
 
     setIsProcessingPdf(true);
     toast.info("PDF raporu oluşturuluyor...");
 
     try {
-      // 1. Numarayı kaydet
-      if (trimmedPhone && trimmedPhone !== parentPhone && studentId) {
-        await fetch(`/api/students/${studentId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ parentPhone: trimmedPhone }),
-        });
-        onParentPhoneSaved?.(trimmedPhone);
-      }
-
-      // 2. PDF Dosyasını oluştur
+      // 1. PDF Dosyasını oluştur
       const { blob, file } = await generateReportPdfBlob(
         reportRef.current,
         studentName,
       );
 
-      // 3. Mobil Cihaz / PWA (iPhone / Android) -> Doğrudan WhatsApp paylaşım menüsünü açar
+      // 2. Mobil Cihaz / PWA (iPhone / Android) -> Doğrudan WhatsApp paylaşım menüsünü açar
       const isMobileDevice =
         typeof navigator !== "undefined" &&
         /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -182,28 +166,14 @@ function DevelopmentReportBody({
         return;
       }
 
-      // 4. Bilgisayar (Mac / Windows): PDF'i bilgisayara indir + WhatsApp'ı aç
+      // 3. Bilgisayar (Mac / Windows): PDF'i bilgisayara indir + WhatsApp'ı aç
       downloadPdfBlob(blob, file.name);
 
-      let cleaned = trimmedPhone.replace(/\D/g, "");
-      if (cleaned.startsWith("0") && cleaned.length === 11) {
-        cleaned = "90" + cleaned.slice(1);
-      } else if (cleaned.length === 10) {
-        cleaned = "90" + cleaned;
-      }
-
-      const message = `Sayın Velimiz,\n\nÖğrencimiz *${studentName}* için hazırlanan güncel gelişim ve takip raporu PDF formatında ektedir. İyi günler dileriz.`;
-
-      const whatsappUrl = cleaned
-        ? `https://api.whatsapp.com/send?phone=${cleaned}&text=${encodeURIComponent(
-            message,
-          )}`
-        : `https://web.whatsapp.com/`;
-
+      const whatsappUrl = `https://web.whatsapp.com/`;
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 
       toast.success(
-        "PDF indirildi ve WhatsApp açıldı! İndirilen dosyayı sohbete sürükleyip veya ataç simgesinden ekleyerek gönderebilirsiniz.",
+        "PDF indirildi ve WhatsApp Web açıldı! İndirilen dosyayı sohbete sürükleyip veya ataç simgesinden ekleyerek gönderebilirsiniz.",
         { duration: 8000 },
       );
     } catch (err) {
@@ -293,101 +263,112 @@ function DevelopmentReportBody({
         aria-modal="true"
         aria-labelledby="development-report-title"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 print:hidden">
-          <div>
-            <h2
-              id="development-report-title"
-              className="text-lg font-bold text-slate-900"
-            >
-              Gelişim Raporu (Veli Raporu)
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Raporu PDF olarak indirebilir veya veliye WhatsApp / e-posta ile
-              gönderebilirsiniz.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => void handleDownloadPdf()}
-              disabled={isProcessingPdf}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
-              title="Raporu PDF dosyası olarak bilgisayarınıza indirin"
-            >
-              <FiDownload />
-              PDF İndir
-            </button>
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 active:scale-95 transition-all cursor-pointer"
-              title="Yazdır"
-            >
-              <FiPrinter />
-              Yazdır
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              aria-label="Kapat"
-            >
-              <FiX className="text-xl" />
-            </button>
+        {/* Üst Başlık Bölümü (Mobilde Ferah, Başlık ve Açıklama Sıkışmaz) */}
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 print:hidden">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 pr-2">
+              <h2
+                id="development-report-title"
+                className="text-base sm:text-lg font-bold text-slate-900 leading-snug"
+              >
+                Gelişim Raporu (Veli Raporu)
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Raporu PDF olarak indirebilir veya veliye WhatsApp / e-posta ile
+                gönderebilirsiniz.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => void handleDownloadPdf()}
+                disabled={isProcessingPdf}
+                className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                title="Raporu PDF dosyası olarak bilgisayarınıza indirin"
+              >
+                <FiDownload />
+                PDF İndir
+              </button>
+              <button
+                onClick={handlePrint}
+                className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 active:scale-95 transition-all cursor-pointer"
+                title="Yazdır"
+              >
+                <FiPrinter />
+                Yazdır
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                aria-label="Kapat"
+              >
+                <FiX className="text-xl" />
+              </button>
+            </div>
           </div>
         </div>
 
         {studentId ? (
-          <div className="px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 print:hidden space-y-2.5">
-            {/* WhatsApp ile Doğrudan PDF Gönderimi */}
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="relative flex-1 w-full">
-                <input
-                  type="tel"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="Veli Telefonu (05xxxxxxxxx)"
-                  className="input-premium w-full text-sm py-2 pl-3"
-                  aria-label="Veli Telefonu"
-                />
-              </div>
+          <div className="px-4 sm:px-6 py-3.5 bg-slate-50/90 border-b border-slate-100 print:hidden space-y-3">
+            {/* Paylaşım & İndirme Butonları (Mobilde Tam Görünür, Asla Taşmaz) */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleWhatsAppSendPdf()}
+                disabled={isProcessingPdf}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-60 cursor-pointer shadow-sm"
+                title="Raporu PDF dosyası olarak WhatsApp veya diğer uygulamalarla paylaş"
+              >
+                <FaWhatsapp className="text-lg shrink-0" />
+                <span>
+                  {isProcessingPdf ? "PDF Hazırlanıyor..." : "WhatsApp'a PDF Gönder"}
+                </span>
+              </button>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => void handleWhatsAppSendPdf()}
-                  disabled={isProcessingPdf}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-60 shrink-0 w-full sm:w-auto cursor-pointer shadow-sm"
-                  title="Raporu PDF dosyası olarak WhatsApp üzerinden veliye gönder"
-                >
-                  <FaWhatsapp className="text-lg" />
-                  {isProcessingPdf
-                    ? "PDF Hazırlanıyor..."
-                    : "WhatsApp'a PDF Gönder"}
-                </button>
+              <button
+                type="button"
+                onClick={() => void handleCopyLink()}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-slate-700 border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-100 active:scale-95 transition-all shrink-0 cursor-pointer shadow-2xs"
+                title="Web raporu bağlantısını kopyala"
+              >
+                {copiedLink ? (
+                  <>
+                    <FiCheck className="text-emerald-600 text-base" />
+                    <span className="text-emerald-700 text-xs sm:text-sm font-medium">
+                      Kopyalandı
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <FiCopy className="text-slate-500 text-base" />
+                    <span className="text-xs sm:text-sm">Linki Kopyala</span>
+                  </>
+                )}
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => void handleCopyLink()}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-slate-700 border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-100 active:scale-95 transition-all shrink-0 cursor-pointer shadow-2xs"
-                  title="Web raporu bağlantısını kopyala"
-                >
-                  {copiedLink ? (
-                    <>
-                      <FiCheck className="text-emerald-600 text-base" />
-                      <span className="text-emerald-700 text-xs">
-                        Kopyalandı
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <FiCopy className="text-slate-500 text-base" />
-                      <span className="text-xs">Linki Kopyala</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => void handleDownloadPdf()}
+                disabled={isProcessingPdf}
+                className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60 shrink-0"
+                title="PDF İndir"
+              >
+                <FiDownload />
+                <span>PDF İndir</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-slate-700 border border-slate-200 text-xs font-medium rounded-xl hover:bg-slate-100 active:scale-95 transition-all shadow-2xs cursor-pointer shrink-0"
+                title="Yazdır"
+              >
+                <FiPrinter />
+                <span>Yazdır</span>
+              </button>
             </div>
 
             {/* E-posta Gönderim Satırı */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 pt-1 border-t border-slate-200/60">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-200/60">
               <input
                 type="email"
                 value={emailInput}
@@ -400,7 +381,7 @@ function DevelopmentReportBody({
                 type="button"
                 onClick={() => void handleSendEmail()}
                 disabled={isSendingEmail}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 shrink-0 w-full sm:w-auto cursor-pointer shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-60 shrink-0 cursor-pointer shadow-sm"
               >
                 <FiMail />
                 {isSendingEmail ? "Gönderiliyor..." : "E-posta Gönder"}

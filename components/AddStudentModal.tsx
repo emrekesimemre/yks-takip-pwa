@@ -20,7 +20,6 @@ function toStoreStudent(data: Student): Student {
     field: data.field ?? "",
     target: data.target ?? "",
     parentEmail: data.parentEmail ?? "",
-    parentPhone: data.parentPhone ?? "",
     reportToken: data.reportToken,
     notes: data.notes ?? "",
     topics: Array.isArray(data.topics) ? data.topics : [],
@@ -43,7 +42,6 @@ type StudentFormProps = {
   initialField?: StudentField;
   initialTarget: string;
   initialParentEmail: string;
-  initialParentPhone?: string;
   initialNotes: string;
   onClose: () => void;
 };
@@ -56,7 +54,6 @@ function StudentForm({
   initialField = "",
   initialTarget,
   initialParentEmail,
-  initialParentPhone = "",
   initialNotes,
   onClose,
 }: StudentFormProps) {
@@ -66,7 +63,6 @@ function StudentForm({
   const [field, setField] = useState<StudentField>(initialField);
   const [target, setTarget] = useState(initialTarget);
   const [parentEmail, setParentEmail] = useState(initialParentEmail);
-  const [parentPhone, setParentPhone] = useState(initialParentPhone);
   const [notes, setNotes] = useState(initialNotes);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -86,7 +82,6 @@ function StudentForm({
             field,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
-            parentPhone: parentPhone.trim(),
             notes: notes.trim(),
           }),
         });
@@ -101,7 +96,6 @@ function StudentForm({
           field: savedStudent.field ?? field,
           target: savedStudent.target ?? "",
           parentEmail: savedStudent.parentEmail ?? "",
-          parentPhone: savedStudent.parentPhone ?? parentPhone.trim(),
           reportToken: savedStudent.reportToken ?? editingStudent.reportToken,
           notes: savedStudent.notes ?? "",
           updatedAt: savedStudent.updatedAt ?? editingStudent.updatedAt,
@@ -117,7 +111,6 @@ function StudentForm({
             field,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
-            parentPhone: parentPhone.trim(),
             notes: notes.trim(),
           }),
         });
@@ -233,40 +226,21 @@ function StudentForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label
-              htmlFor="parent-email"
-              className="block text-sm font-semibold text-slate-700 mb-1.5"
-            >
-              Veli e-postası
-            </label>
-            <input
-              id="parent-email"
-              type="email"
-              value={parentEmail}
-              onChange={(e) => setParentEmail(e.target.value)}
-              className="input-premium"
-              placeholder="ornek@gmail.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="parent-phone"
-              className="block text-sm font-semibold text-slate-700 mb-1.5"
-            >
-              Veli Telefonu (WhatsApp)
-            </label>
-            <input
-              id="parent-phone"
-              type="tel"
-              value={parentPhone}
-              onChange={(e) => setParentPhone(e.target.value)}
-              className="input-premium"
-              placeholder="05xxxxxxxxx"
-            />
-          </div>
+        <div>
+          <label
+            htmlFor="parent-email"
+            className="block text-sm font-semibold text-slate-700 mb-1.5"
+          >
+            Veli e-postası (Opsiyonel)
+          </label>
+          <input
+            id="parent-email"
+            type="email"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+            className="input-premium"
+            placeholder="ornek@gmail.com"
+          />
         </div>
 
         <div>
@@ -360,9 +334,6 @@ export default function AddStudentModal() {
             initialTarget={isEditMode ? (editingStudent.target ?? "") : ""}
             initialParentEmail={
               isEditMode ? (editingStudent.parentEmail ?? "") : ""
-            }
-            initialParentPhone={
-              isEditMode ? (editingStudent.parentPhone ?? "") : ""
             }
             initialNotes={isEditMode ? (editingStudent.notes ?? "") : ""}
             onClose={handleClose}
