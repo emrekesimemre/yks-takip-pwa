@@ -1,4 +1,4 @@
-import { denemeCoursesByType, type DenemeExamType } from "@/data/denemeCourses";
+import { denemeCoursesByType } from "@/data/denemeCourses";
 import type { MockExam, MockExamCourseResult } from "@/store/useStudentStore";
 
 export function calculateNet(correct: number, wrong: number): number {
@@ -19,7 +19,7 @@ export function calculateExamTotals(exam: MockExam) {
   const empty = exam.courses.reduce((s, c) => s + c.empty, 0);
   const net = calculateNet(correct, wrong);
   const total = correct + wrong + empty;
-  const maxTotal = denemeCoursesByType[exam.type].reduce(
+  const maxTotal = (denemeCoursesByType[exam.type] ?? []).reduce(
     (s, c) => s + c.maxQuestions,
     0,
   );
@@ -103,7 +103,7 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
 
   exams.forEach((exam) => {
     exam.courses.forEach((c) => {
-      const def = denemeCoursesByType[exam.type].find(
+      const def = (denemeCoursesByType[exam.type] ?? []).find(
         (d) => d.key === c.courseKey,
       );
       if (!def) return;
@@ -164,7 +164,7 @@ export function getExamTrend(exams: MockExam[]): {
   name: string;
   date: string;
   net: number;
-  type: DenemeExamType;
+  type: string;
 }[] {
   return [...exams]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -178,9 +178,9 @@ export function getExamTrend(exams: MockExam[]): {
 }
 
 export function createEmptyCourseResults(
-  type: DenemeExamType,
+  type: string,
 ): MockExamCourseResult[] {
-  return denemeCoursesByType[type].map((c) => ({
+  return (denemeCoursesByType[type] ?? []).map((c) => ({
     courseKey: c.key,
     correct: 0,
     wrong: 0,
@@ -189,7 +189,7 @@ export function createEmptyCourseResults(
 }
 
 export function mergeCourseResults(
-  type: DenemeExamType,
+  type: string,
   existing: MockExamCourseResult[],
 ): MockExamCourseResult[] {
   return createEmptyCourseResults(type).map((c) => {
@@ -219,7 +219,7 @@ export function normalizeExamName(name: string): string {
 
 export function buildExamSessionKey(
   date: string,
-  type: DenemeExamType,
+  type: string,
 ): string {
   return `${date}|${type}`;
 }
@@ -227,7 +227,7 @@ export function buildExamSessionKey(
 export type ExamGroup = {
   key: string;
   date: string;
-  type: DenemeExamType;
+  type: string;
   names: string[];
   studentCount: number;
 };
@@ -252,7 +252,7 @@ export function findMatchingExam(
   exams: MockExam[],
   groupKey: string,
 ): MockExam | undefined {
-  const [date, type] = groupKey.split("|") as [string, DenemeExamType];
+  const [date, type] = groupKey.split("|") as [string, string];
   const matches = exams.filter(
     (exam) => exam.date === date && exam.type === type,
   );

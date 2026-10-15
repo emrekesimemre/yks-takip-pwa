@@ -38,6 +38,11 @@ export async function GET(
       return jsonError("Öğrenci bulunamadı veya yetkiniz yok.", 404);
     }
 
+    if (!student.reportToken) {
+      student.reportToken = crypto.randomUUID();
+      await student.save();
+    }
+
     return NextResponse.json(student.toObject({ flattenMaps: true }), {
       status: 200,
     });

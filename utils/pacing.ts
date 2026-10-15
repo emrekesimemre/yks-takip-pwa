@@ -1,4 +1,4 @@
-import { masterCurriculum, type Curriculum } from "@/data/subjects";
+import { getCurriculumForStudent } from "@/data/subjects";
 import type { TopicProgress } from "@/store/useStudentStore";
 import { isTopicCompleted } from "@/utils/curriculum";
 
@@ -14,7 +14,7 @@ export function getPacingTargetDate(from: Date = new Date()): Date {
 
 export const PACING_TARGET_DATE = getPacingTargetDate();
 
-export type CoursePacingKey = `${keyof Curriculum}-${string}`;
+export type CoursePacingKey = `${string}-${string}`;
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -39,7 +39,7 @@ export function getWeeklyTargetPerCourse(
 }
 
 export type PacingWarning = {
-  exam: keyof Curriculum;
+  exam: string;
   course: string;
   incompleteCount: number;
   weeklyTarget: number;
@@ -54,12 +54,15 @@ export function getPacingWarnings(
   weeklySelectedTopics: string[],
   from: Date = new Date(),
   targetDate: Date = getPacingTargetDate(from),
+  grade?: string,
+  field?: string,
 ): PacingWarning[] {
   const weeksRemaining = getWeeksRemaining(from, targetDate);
   const warnings: PacingWarning[] = [];
+  const studentCurriculum = getCurriculumForStudent(grade, field);
 
-  (["TYT", "AYT"] as const).forEach((exam) => {
-    Object.entries(masterCurriculum[exam]).forEach(([course, courseTopics]) => {
+  Object.entries(studentCurriculum).forEach(([exam, courses]) => {
+    Object.entries(courses).forEach(([course, courseTopics]) => {
       const incomplete = courseTopics.filter(
         (t) => !isTopicCompleted(t.id, topics),
       );

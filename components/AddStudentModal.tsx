@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "sonner";
-import { useStudentStore, type Student } from "@/store/useStudentStore";
+import {
+  useStudentStore,
+  type Student,
+  type GradeLevel,
+  type StudentField,
+} from "@/store/useStudentStore";
 import AnimatedModal from "@/components/ui/AnimatedModal";
 
 function toStoreStudent(data: Student): Student {
@@ -11,8 +16,12 @@ function toStoreStudent(data: Student): Student {
     ...data,
     _id: data._id != null ? String(data._id) : undefined,
     name: data.name,
+    grade: data.grade ?? "12",
+    field: data.field ?? "",
     target: data.target ?? "",
     parentEmail: data.parentEmail ?? "",
+    parentPhone: data.parentPhone ?? "",
+    reportToken: data.reportToken,
     notes: data.notes ?? "",
     topics: Array.isArray(data.topics) ? data.topics : [],
     weeklySelectedTopics: Array.isArray(data.weeklySelectedTopics)
@@ -30,8 +39,11 @@ type StudentFormProps = {
   isEditMode: boolean;
   editingStudent: Student | null;
   initialName: string;
+  initialGrade?: GradeLevel;
+  initialField?: StudentField;
   initialTarget: string;
   initialParentEmail: string;
+  initialParentPhone?: string;
   initialNotes: string;
   onClose: () => void;
 };
@@ -40,15 +52,21 @@ function StudentForm({
   isEditMode,
   editingStudent,
   initialName,
+  initialGrade = "12",
+  initialField = "",
   initialTarget,
   initialParentEmail,
+  initialParentPhone = "",
   initialNotes,
   onClose,
 }: StudentFormProps) {
   const { addStudent, updateStudent } = useStudentStore();
   const [name, setName] = useState(initialName);
+  const [grade, setGrade] = useState<GradeLevel>(initialGrade);
+  const [field, setField] = useState<StudentField>(initialField);
   const [target, setTarget] = useState(initialTarget);
   const [parentEmail, setParentEmail] = useState(initialParentEmail);
+  const [parentPhone, setParentPhone] = useState(initialParentPhone);
   const [notes, setNotes] = useState(initialNotes);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,8 +82,11 @@ function StudentForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim(),
+            grade,
+            field,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
+            parentPhone: parentPhone.trim(),
             notes: notes.trim(),
           }),
         });
@@ -76,8 +97,12 @@ function StudentForm({
         updateStudent({
           ...editingStudent,
           name: savedStudent.name,
+          grade: savedStudent.grade ?? grade,
+          field: savedStudent.field ?? field,
           target: savedStudent.target ?? "",
           parentEmail: savedStudent.parentEmail ?? "",
+          parentPhone: savedStudent.parentPhone ?? parentPhone.trim(),
+          reportToken: savedStudent.reportToken ?? editingStudent.reportToken,
           notes: savedStudent.notes ?? "",
           updatedAt: savedStudent.updatedAt ?? editingStudent.updatedAt,
         });
@@ -88,8 +113,11 @@ function StudentForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim(),
+            grade,
+            field,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
+            parentPhone: parentPhone.trim(),
             notes: notes.trim(),
           }),
         });
@@ -142,34 +170,103 @@ function StudentForm({
           />
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Sınıf Düzeyi
+            </label>
+            <select
+              value={grade}
+              onChange={(e) => {
+                const nextGrade = e.target.value as GradeLevel;
+                setGrade(nextGrade);
+                if (nextGrade === "9" || nextGrade === "10") {
+                  setField("");
+                } else if (!field) {
+                  setField("sayisal");
+                }
+              }}
+              className="input-premium"
+            >
+              <option value="9">9. Sınıf</option>
+              <option value="10">10. Sınıf</option>
+              <option value="11">11. Sınıf</option>
+              <option value="12">12. Sınıf (YKS)</option>
+              <option value="mezun">Mezun (YKS)</option>
+            </select>
+          </div>
+
+          {(grade === "11" || grade === "12" || grade === "mezun") && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Alan
+              </label>
+              <select
+                value={field || "sayisal"}
+                onChange={(e) => setField(e.target.value as StudentField)}
+                className="input-premium"
+              >
+                <option value="sayisal">Sayısal (MF)</option>
+                <option value="esit-agirlik">Eşit Ağırlık (TM)</option>
+                <option value="sozel">Sözel (TS)</option>
+                <option value="dil">Yabancı Dil (DİL)</option>
+                <option value="genel">Genel / Ortak</option>
+              </select>
+            </div>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-            Hedef / Alan
+            Hedef
           </label>
           <input
             type="text"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             className="input-premium"
-            placeholder="Örn: Sayısal İlk 20 Bin"
+            placeholder={
+              grade === "9" || grade === "10"
+                ? "Örn: Yıl Sonu 90+ Ortalama"
+                : "Örn: İTÜ Bilgisayar Mühendisliği"
+            }
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="parent-email"
-            className="block text-sm font-semibold text-slate-700 mb-1.5"
-          >
-            Veli e-postası
-          </label>
-          <input
-            id="parent-email"
-            type="email"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-            className="input-premium"
-            placeholder="ornek@gmail.com"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="parent-email"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Veli e-postası
+            </label>
+            <input
+              id="parent-email"
+              type="email"
+              value={parentEmail}
+              onChange={(e) => setParentEmail(e.target.value)}
+              className="input-premium"
+              placeholder="ornek@gmail.com"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="parent-phone"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Veli Telefonu (WhatsApp)
+            </label>
+            <input
+              id="parent-phone"
+              type="tel"
+              value={parentPhone}
+              onChange={(e) => setParentPhone(e.target.value)}
+              className="input-premium"
+              placeholder="05xxxxxxxxx"
+            />
+          </div>
         </div>
 
         <div>
@@ -258,9 +355,14 @@ export default function AddStudentModal() {
             isEditMode={isEditMode}
             editingStudent={editingStudent}
             initialName={isEditMode ? editingStudent.name : ""}
+            initialGrade={isEditMode ? (editingStudent.grade ?? "12") : "12"}
+            initialField={isEditMode ? (editingStudent.field ?? "") : ""}
             initialTarget={isEditMode ? (editingStudent.target ?? "") : ""}
             initialParentEmail={
               isEditMode ? (editingStudent.parentEmail ?? "") : ""
+            }
+            initialParentPhone={
+              isEditMode ? (editingStudent.parentPhone ?? "") : ""
             }
             initialNotes={isEditMode ? (editingStudent.notes ?? "") : ""}
             onClose={handleClose}

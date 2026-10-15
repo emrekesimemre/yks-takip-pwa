@@ -4,7 +4,7 @@ import { requireTeacherSession } from "@/lib/api-auth";
 import { parseOptionalEmail } from "@/lib/mail";
 import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
-import { masterCurriculum } from "@/data/subjects";
+import { getCurriculumForStudent } from "@/data/subjects";
 import { createStudentSchema, zodErrorMessage } from "@/lib/student-payload";
 
 export async function POST(req: Request) {
@@ -26,12 +26,14 @@ export async function POST(req: Request) {
       return jsonError("Geçerli bir veli e-postası girin.", 400);
     }
 
+    const studentCurriculum = getCurriculumForStudent(
+      parsed.data.grade,
+      parsed.data.field,
+    );
     const initialTopics: { id: string; isCompleted: boolean }[] = [];
-    const exams = ["TYT", "AYT"] as const;
-    exams.forEach((exam) => {
-      const courses = masterCurriculum[exam];
-      Object.keys(courses).forEach((courseName) => {
-        courses[courseName].forEach((topic) => {
+    Object.values(studentCurriculum).forEach((courses) => {
+      Object.values(courses).forEach((topicList) => {
+        topicList.forEach((topic) => {
           initialTopics.push({ id: topic.id, isCompleted: false });
         });
       });
@@ -39,8 +41,11 @@ export async function POST(req: Request) {
 
     const newStudent = await Student.create({
       name: parsed.data.name,
+      grade: parsed.data.grade,
+      field: parsed.data.field,
       target: parsed.data.target,
       parentEmail,
+      parentPhone: parsed.data.parentPhone ?? "",
       notes: parsed.data.notes,
       teacherEmail: auth.email,
       topics: initialTopics,

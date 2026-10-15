@@ -21,15 +21,18 @@ const mockExamCourseSchema = z.object({
 const mockExamSchema = z.object({
   id: z.string().min(1).max(80),
   name: z.string().trim().min(1).max(120),
-  type: z.enum(["TYT", "AYT"]),
+  type: z.string().min(1).max(40),
   date: z.string().min(4).max(40),
-  courses: z.array(mockExamCourseSchema).max(20),
+  courses: z.array(mockExamCourseSchema).max(30),
 });
 
 export const createStudentSchema = z.object({
   name: z.string().trim().min(1, "Öğrenci adı gerekli.").max(80),
+  grade: z.enum(["9", "10", "11", "12", "mezun"]).optional().default("12"),
+  field: z.enum(["sayisal", "esit-agirlik", "sozel", "dil", "genel", ""]).optional().default(""),
   target: z.string().trim().max(80).optional().default(""),
   parentEmail: z.unknown().optional(),
+  parentPhone: z.string().trim().max(25).optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
 });
 
@@ -42,8 +45,12 @@ export const patchStudentSchema = z.object({
   weeklySolvedQuestionsByTopic: solvedMapSchema.optional(),
   mockExams: z.array(mockExamSchema).max(200).optional(),
   name: z.string().trim().min(1, "Öğrenci adı boş olamaz.").max(80).optional(),
+  grade: z.enum(["9", "10", "11", "12", "mezun"]).optional(),
+  field: z.enum(["sayisal", "esit-agirlik", "sozel", "dil", "genel", ""]).optional(),
   target: z.string().trim().max(80).optional(),
   parentEmail: z.unknown().optional(),
+  parentPhone: z.string().trim().max(25).optional(),
+  reportToken: z.string().trim().max(60).optional(),
   notes: z.string().trim().max(1000).optional(),
 });
 
@@ -53,6 +60,18 @@ export function zodErrorMessage(error: z.ZodError) {
   return error.issues[0]?.message || "Geçersiz istek.";
 }
 
+export function sanitizeMapKeys(
+  map?: Record<string, number>,
+): Record<string, number> | undefined {
+  if (!map) return undefined;
+  const sanitized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const safeKey = key.replace(/\./g, "");
+    sanitized[safeKey] = value;
+  }
+  return sanitized;
+}
+
 export function studentPatchToUpdate(body: StudentPatchInput) {
   const updateFields: Record<string, unknown> = {};
   if (body.topics !== undefined) updateFields.topics = body.topics;
@@ -60,21 +79,32 @@ export function studentPatchToUpdate(body: StudentPatchInput) {
     updateFields.weeklySelectedTopics = body.weeklySelectedTopics;
   }
   if (body.solvedQuestionsByCourse !== undefined) {
-    updateFields.solvedQuestionsByCourse = body.solvedQuestionsByCourse;
+    updateFields.solvedQuestionsByCourse = sanitizeMapKeys(
+      body.solvedQuestionsByCourse,
+    );
   }
   if (body.solvedQuestionsByTopic !== undefined) {
-    updateFields.solvedQuestionsByTopic = body.solvedQuestionsByTopic;
+    updateFields.solvedQuestionsByTopic = sanitizeMapKeys(
+      body.solvedQuestionsByTopic,
+    );
   }
   if (body.weeklySolvedQuestionsByCourse !== undefined) {
-    updateFields.weeklySolvedQuestionsByCourse =
-      body.weeklySolvedQuestionsByCourse;
+    updateFields.weeklySolvedQuestionsByCourse = sanitizeMapKeys(
+      body.weeklySolvedQuestionsByCourse,
+    );
   }
   if (body.weeklySolvedQuestionsByTopic !== undefined) {
-    updateFields.weeklySolvedQuestionsByTopic = body.weeklySolvedQuestionsByTopic;
+    updateFields.weeklySolvedQuestionsByTopic = sanitizeMapKeys(
+      body.weeklySolvedQuestionsByTopic,
+    );
   }
   if (body.mockExams !== undefined) updateFields.mockExams = body.mockExams;
   if (body.name !== undefined) updateFields.name = body.name;
+  if (body.grade !== undefined) updateFields.grade = body.grade;
+  if (body.field !== undefined) updateFields.field = body.field;
   if (body.target !== undefined) updateFields.target = body.target;
+  if (body.parentPhone !== undefined) updateFields.parentPhone = body.parentPhone;
+  if (body.reportToken !== undefined) updateFields.reportToken = body.reportToken;
   if (body.notes !== undefined) updateFields.notes = body.notes;
   return updateFields;
 }

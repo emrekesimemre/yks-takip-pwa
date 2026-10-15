@@ -31,6 +31,21 @@ function daysSince(dateStr: string): number {
   return Math.floor((Date.now() - updated) / (24 * 60 * 60 * 1000));
 }
 
+function formatGradeLabel(grade?: string, field?: string): string {
+  const g = grade || "12";
+  const fieldMap: Record<string, string> = {
+    sayisal: "SAY",
+    "esit-agirlik": "EA",
+    sozel: "SÖZ",
+    dil: "DİL",
+  };
+  const fText = field && fieldMap[field] ? ` · ${fieldMap[field]}` : "";
+  if (g === "9") return "9. Sınıf";
+  if (g === "10") return "10. Sınıf";
+  if (g === "11") return `11. Sınıf${fText}`;
+  if (g === "mezun") return `Mezun${fText}`;
+  return `12. Sınıf${fText}`;
+}
 
 export default function DashboardClient() {
   const {
@@ -43,6 +58,7 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [gradeFilter, setGradeFilter] = useState<string>("ALL");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -94,9 +110,17 @@ export default function DashboardClient() {
     return <LoadingSpinner label="Öğrenciler yükleniyor..." />;
   }
 
+  const filteredStudents = students.filter((s) => {
+    if (gradeFilter === "ALL") return true;
+    if (gradeFilter === "12_MEZUN") {
+      return (s.grade || "12") === "12" || s.grade === "mezun";
+    }
+    return (s.grade || "12") === gradeFilter;
+  });
+
   return (
     <PageTransition>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             Öğrencilerim
@@ -117,6 +141,30 @@ export default function DashboardClient() {
           Yeni Öğrenci Ekle
         </motion.button>
       </div>
+
+      {students.length > 0 && (
+        <div className="inline-flex p-1 bg-slate-100 rounded-xl gap-1 mb-6 flex-wrap">
+          {[
+            { key: "ALL", label: "Tümü" },
+            { key: "9", label: "9. Sınıf" },
+            { key: "10", label: "10. Sınıf" },
+            { key: "11", label: "11. Sınıf" },
+            { key: "12_MEZUN", label: "12 & Mezun (YKS)" },
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setGradeFilter(item.key)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                gradeFilter === item.key
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {students.length === 0 ? (
         <motion.div
@@ -139,10 +187,23 @@ export default function DashboardClient() {
             İlk Öğrenciyi Ekle
           </button>
         </motion.div>
+      ) : filteredStudents.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+          <p className="text-base font-semibold text-slate-600 mb-1">
+            Bu sınıf düzeyinde kayıtlı öğrenci bulunamadı.
+          </p>
+          <p className="text-xs text-slate-400">
+            Filtreyi &quot;Tümü&quot; olarak değiştirebilirsiniz.
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {students.map((student) => {
-            const progress = getOverallProgress(student.topics ?? []);
+          {filteredStudents.map((student) => {
+            const progress = getOverallProgress(
+              student.topics ?? [],
+              student.grade,
+              student.field,
+            );
             const weeklyCount = student.weeklySelectedTopics?.length ?? 0;
             const inactiveDays = student.updatedAt
               ? daysSince(student.updatedAt)
@@ -207,9 +268,14 @@ export default function DashboardClient() {
                     href={`/dashboard/student/${student._id}`}
                     className="block px-5 pb-5"
                   >
-                    <h3 className="font-semibold text-lg text-slate-800 group-hover:text-blue-700 transition-colors">
-                      {student.name}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-lg text-slate-800 group-hover:text-blue-700 transition-colors truncate">
+                        {student.name}
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 shrink-0">
+                        {formatGradeLabel(student.grade, student.field)}
+                      </span>
+                    </div>
                     <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
                       <FiTarget className="text-blue-400 shrink-0" />
                       <span className="truncate">

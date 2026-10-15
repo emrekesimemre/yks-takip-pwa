@@ -15,10 +15,19 @@ export type MockExamCourseResult = {
   empty: number;
 };
 
+export type GradeLevel = "9" | "10" | "11" | "12" | "mezun";
+export type StudentField =
+  | "sayisal"
+  | "esit-agirlik"
+  | "sozel"
+  | "dil"
+  | "genel"
+  | "";
+
 export type MockExam = {
   id: string;
   name: string;
-  type: "TYT" | "AYT";
+  type: string;
   date: string;
   courses: MockExamCourseResult[];
 };
@@ -26,8 +35,12 @@ export type MockExam = {
 export type Student = {
   _id?: string;
   name: string;
+  grade?: GradeLevel;
+  field?: StudentField;
   target: string;
   parentEmail?: string;
+  parentPhone?: string;
+  reportToken?: string;
   notes?: string;
   updatedAt?: string;
   topics: TopicProgress[];

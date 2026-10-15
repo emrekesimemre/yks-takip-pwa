@@ -22,7 +22,6 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
 import { getOverallProgress, getCourseKey } from "@/utils/curriculum";
 import { normalizeSolvedQuestions, normalizeTopics } from "@/utils/student";
-import type { Curriculum } from "@/data/subjects";
 import {
   FiArrowLeft,
   FiTrash2,
@@ -267,7 +266,7 @@ export default function StudentDetailClient({
   );
 
   const handleUpdateSolvedQuestions = useCallback(
-    (exam: keyof Curriculum, course: string, count: number) => {
+    (exam: string, course: string, count: number) => {
       const student = useStudentStore.getState().currentStudent;
       if (!student) return;
 
@@ -313,7 +312,7 @@ export default function StudentDetailClient({
   );
 
   const handleUpdateWeeklySolvedQuestions = useCallback(
-    (exam: "TYT" | "AYT", course: string, count: number) => {
+    (exam: string, course: string, count: number) => {
       const student = useStudentStore.getState().currentStudent;
       if (!student) return;
 
@@ -428,7 +427,11 @@ export default function StudentDetailClient({
     );
   }
 
-  const overallProgress = getOverallProgress(currentStudent.topics);
+  const overallProgress = getOverallProgress(
+    currentStudent.topics,
+    currentStudent.grade,
+    currentStudent.field,
+  );
   const weeklySelected = currentStudent.weeklySelectedTopics ?? [];
   const solvedQuestions = currentStudent.solvedQuestionsByCourse ?? {};
   const solvedQuestionsByTopic = currentStudent.solvedQuestionsByTopic ?? {};
@@ -441,6 +444,25 @@ export default function StudentDetailClient({
   const circumference = 2 * Math.PI * 42;
   const strokeDashoffset =
     circumference - (overallProgress / 100) * circumference;
+
+  const gradeBadgeText = (() => {
+    const g = currentStudent.grade || "12";
+    const fieldMap: Record<string, string> = {
+      sayisal: "SAY",
+      "esit-agirlik": "EA",
+      sozel: "SÖZ",
+      dil: "DİL",
+    };
+    const fText =
+      currentStudent.field && fieldMap[currentStudent.field]
+        ? ` · ${fieldMap[currentStudent.field]}`
+        : "";
+    if (g === "9") return "9. Sınıf";
+    if (g === "10") return "10. Sınıf";
+    if (g === "11") return `11. Sınıf${fText}`;
+    if (g === "mezun") return `Mezun${fText}`;
+    return `12. Sınıf (YKS)${fText}`;
+  })();
 
   return (
     <PageTransition>
@@ -462,9 +484,14 @@ export default function StudentDetailClient({
                   {currentStudent.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-3xl font-bold text-slate-900 tracking-tight truncate">
-                    {currentStudent.name}
-                  </h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl sm:text-3xl font-bold text-slate-900 tracking-tight truncate">
+                      {currentStudent.name}
+                    </h1>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
+                      {gradeBadgeText}
+                    </span>
+                  </div>
                   <p className="text-slate-500 mt-0.5 font-medium flex items-center gap-1.5 min-w-0">
                     <FiTrendingUp className="text-blue-500 shrink-0" />
                     <span className="truncate">
@@ -615,6 +642,8 @@ export default function StudentDetailClient({
               >
                 {activeTab === "progress" ? (
                   <GeneralProgressTab
+                    grade={currentStudent.grade}
+                    field={currentStudent.field}
                     topics={currentStudent.topics}
                     solvedQuestionsByCourse={solvedQuestions}
                     solvedQuestionsByTopic={solvedQuestionsByTopic}
@@ -624,6 +653,8 @@ export default function StudentDetailClient({
                   />
                 ) : activeTab === "weekly" ? (
                   <WeeklyPlanTab
+                    grade={currentStudent.grade}
+                    field={currentStudent.field}
                     topics={currentStudent.topics}
                     weeklySelectedTopics={weeklySelected}
                     weeklySolvedQuestionsByCourse={weeklySolvedQuestions}
@@ -640,6 +671,8 @@ export default function StudentDetailClient({
                   />
                 ) : (
                   <MockExamTab
+                    grade={currentStudent.grade}
+                    field={currentStudent.field}
                     mockExams={mockExams}
                     onAddExam={handleAddMockExam}
                     onUpdateExam={handleUpdateMockExam}
@@ -665,14 +698,24 @@ export default function StudentDetailClient({
         onClose={() => setShowDevelopmentReport(false)}
         studentId={currentStudent._id}
         studentName={currentStudent.name}
+        grade={currentStudent.grade}
+        field={currentStudent.field}
         target={currentStudent.target}
         parentEmail={currentStudent.parentEmail}
+        parentPhone={currentStudent.parentPhone}
+        reportToken={currentStudent.reportToken}
         topics={currentStudent.topics}
         solvedQuestionsByCourse={solvedQuestions}
         solvedQuestionsByTopic={solvedQuestionsByTopic}
         mockExams={mockExams}
         onParentEmailSaved={(savedParentEmail) => {
           updateCurrentStudent({ parentEmail: savedParentEmail });
+        }}
+        onParentPhoneSaved={(savedParentPhone) => {
+          updateCurrentStudent({ parentPhone: savedParentPhone });
+        }}
+        onReportTokenSaved={(savedToken) => {
+          updateCurrentStudent({ reportToken: savedToken });
         }}
       />
 

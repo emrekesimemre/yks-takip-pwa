@@ -20,7 +20,7 @@ export default function CourseSolvedQuestionsInput({
   const [local, setLocal] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
-  const displayValue = isFocused ? local : value ? String(value) : "";
+  const displayValue = isFocused ? local : value ? String(value) : (disabled ? "0" : "");
   const inputClassName = compact
     ? "w-16 px-1.5 py-0.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white transition-all disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
     : "w-24 px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white transition-all disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed";

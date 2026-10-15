@@ -35,7 +35,7 @@ export default function WeeklyPlanPrintView({
   }, {});
 
   const totalQuestions = Object.entries(grouped).reduce((sum, [key, topics]) => {
-    const [exam, course] = key.split("__") as ["TYT" | "AYT", string];
+    const [exam, course] = key.split("__");
     const courseTotal = getCourseSolvedCount(
       weeklySolvedQuestionsByCourse,
       exam,
@@ -77,7 +77,7 @@ export default function WeeklyPlanPrintView({
         ) : (
           <div className="space-y-6">
             {Object.entries(grouped).map(([key, groupTopics]) => {
-              const [exam, course] = key.split("__") as ["TYT" | "AYT", string];
+              const [exam, course] = key.split("__");
               const courseTotal = getCourseSolvedCount(
                 weeklySolvedQuestionsByCourse,
                 exam,

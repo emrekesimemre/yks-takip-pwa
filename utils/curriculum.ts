@@ -1,24 +1,66 @@
-import { masterCurriculum, type Curriculum } from "@/data/subjects";
+import {
+  masterCurriculum,
+  getCurriculumForStudent,
+  allCurriculums,
+  type Course,
+} from "@/data/subjects";
 import type { TopicProgress } from "@/store/useStudentStore";
 
-export type ExamType = keyof Curriculum;
+export type ExamType = string;
 
 export type TopicMeta = {
   id: string;
   title: string;
   course: string;
-  exam: ExamType;
+  exam: string;
 };
 
 export function getAllTopics(): TopicMeta[] {
   const result: TopicMeta[] = [];
-  (["TYT", "AYT"] as const).forEach((exam) => {
-    Object.entries(masterCurriculum[exam]).forEach(([course, topics]) => {
+  const seenIds = new Set<string>();
+
+  Object.entries(allCurriculums).forEach(([section, courses]) => {
+    Object.entries(courses).forEach(([course, topics]) => {
       topics.forEach((topic) => {
-        result.push({ id: topic.id, title: topic.title, course, exam });
+        if (!seenIds.has(topic.id)) {
+          seenIds.add(topic.id);
+          result.push({
+            id: topic.id,
+            title: topic.title,
+            course,
+            exam: section.startsWith("11. Sınıf")
+              ? "11. Sınıf"
+              : section,
+          });
+        }
       });
     });
   });
+
+  return result;
+}
+
+export function getStudentTopics(grade?: string, field?: string): TopicMeta[] {
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const result: TopicMeta[] = [];
+  const seenIds = new Set<string>();
+
+  Object.entries(studentCurriculum).forEach(([section, courses]) => {
+    Object.entries(courses).forEach(([course, topics]) => {
+      topics.forEach((topic) => {
+        if (!seenIds.has(topic.id)) {
+          seenIds.add(topic.id);
+          result.push({
+            id: topic.id,
+            title: topic.title,
+            course,
+            exam: section,
+          });
+        }
+      });
+    });
+  });
+
   return result;
 }
 
@@ -34,11 +76,18 @@ export function isTopicCompleted(
 }
 
 export function getCourseProgress(
-  exam: ExamType,
+  exam: string,
   course: string,
   topics: TopicProgress[],
+  grade?: string,
+  field?: string,
 ): { completed: number; total: number; percentage: number } {
-  const courseTopics = masterCurriculum[exam][course] ?? [];
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const courseTopics =
+    studentCurriculum[exam]?.[course] ??
+    allCurriculums[exam]?.[course] ??
+    (masterCurriculum as unknown as Record<string, Course>)[exam]?.[course] ??
+    [];
   const total = courseTopics.length;
   const completed = courseTopics.filter((t) =>
     isTopicCompleted(t.id, topics),
@@ -50,20 +99,28 @@ export function getCourseProgress(
   };
 }
 
-export function getOverallProgress(topics: TopicProgress[]): number {
-  const all = getAllTopics();
-  if (all.length === 0) return 0;
-  const completed = all.filter((t) => isTopicCompleted(t.id, topics)).length;
-  return Math.round((completed / all.length) * 100);
+export function getOverallProgress(
+  topics: TopicProgress[],
+  grade?: string,
+  field?: string,
+): number {
+  const studentTopics = grade ? getStudentTopics(grade, field) : getAllTopics();
+  if (studentTopics.length === 0) return 0;
+  const completed = studentTopics.filter((t) => isTopicCompleted(t.id, topics)).length;
+  return Math.round((completed / studentTopics.length) * 100);
 }
 
 export function getExamProgress(
-  exam: ExamType,
+  exam: string,
   topics: TopicProgress[],
+  grade?: string,
+  field?: string,
 ): { completed: number; total: number; percentage: number } {
-  const examTopics = getAllTopics().filter((t) => t.exam === exam);
-  const total = examTopics.length;
-  const completed = examTopics.filter((t) =>
+  const applicableTopics = grade
+    ? getStudentTopics(grade, field).filter((t) => t.exam === exam)
+    : getAllTopics().filter((t) => t.exam === exam);
+  const total = applicableTopics.length;
+  const completed = applicableTopics.filter((t) =>
     isTopicCompleted(t.id, topics),
   ).length;
   return {
@@ -81,30 +138,44 @@ export type CourseProgressItem = {
 };
 
 export function getCourseProgressList(
-  exam: ExamType,
+  exam: string,
   topics: TopicProgress[],
+  grade?: string,
+  field?: string,
 ): CourseProgressItem[] {
-  return Object.keys(masterCurriculum[exam]).map((course) => ({
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const courses =
+    studentCurriculum[exam] ??
+    allCurriculums[exam] ??
+    (masterCurriculum as unknown as Record<string, Course>)[exam] ??
+    {};
+
+  return Object.keys(courses).map((course) => ({
     course,
-    ...getCourseProgress(exam, course, topics),
+    ...getCourseProgress(exam, course, topics, grade, field),
   }));
 }
 
-export function getIncompleteTopics(topics: TopicProgress[]): TopicMeta[] {
-  return getAllTopics().filter((t) => !isTopicCompleted(t.id, topics));
+export function getIncompleteTopics(
+  topics: TopicProgress[],
+  grade?: string,
+  field?: string,
+): TopicMeta[] {
+  const list = grade ? getStudentTopics(grade, field) : getAllTopics();
+  return list.filter((t) => !isTopicCompleted(t.id, topics));
 }
 
-export function getCourseKey(exam: ExamType, course: string): string {
-  return `${exam}-${course}`;
+export function getCourseKey(exam: string, course: string): string {
+  return `${exam.replace(/\./g, "")}-${course}`;
 }
 
-export function formatExamCourseLabel(exam: ExamType, course: string): string {
+export function formatExamCourseLabel(exam: string, course: string): string {
   return `${exam} ${course}`;
 }
 
-export function parseCourseKey(key: string): { exam: ExamType; course: string } {
+export function parseCourseKey(key: string): { exam: string; course: string } {
   const [exam, ...rest] = key.split("-");
-  return { exam: exam as ExamType, course: rest.join("-") };
+  return { exam, course: rest.join("-") };
 }
 
 export function getTopicSolvedCount(
@@ -116,10 +187,17 @@ export function getTopicSolvedCount(
 
 export function getCourseTopicSolvedSum(
   record: Record<string, number> | undefined,
-  exam: ExamType,
+  exam: string,
   course: string,
+  grade?: string,
+  field?: string,
 ): number {
-  const courseTopics = masterCurriculum[exam][course] ?? [];
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const courseTopics =
+    studentCurriculum[exam]?.[course] ??
+    allCurriculums[exam]?.[course] ??
+    (masterCurriculum as unknown as Record<string, Course>)[exam]?.[course] ??
+    [];
   return courseTopics.reduce(
     (sum, topic) => sum + getTopicSolvedCount(record, topic.id),
     0,
@@ -128,20 +206,27 @@ export function getCourseTopicSolvedSum(
 
 export function getCourseGeneralSolvedCount(
   courseRecord: Record<string, number> | undefined,
-  exam: ExamType,
+  exam: string,
   course: string,
 ): number {
-  return courseRecord?.[getCourseKey(exam, course)] ?? 0;
+  if (!courseRecord) return 0;
+  return (
+    courseRecord[getCourseKey(exam, course)] ??
+    courseRecord[`${exam}-${course}`] ??
+    0
+  );
 }
 
 export function getCourseSolvedCount(
   courseRecord: Record<string, number> | undefined,
-  exam: ExamType,
+  exam: string,
   course: string,
   topicRecord?: Record<string, number> | undefined,
+  grade?: string,
+  field?: string,
 ): number {
   return (
-    getCourseTopicSolvedSum(topicRecord, exam, course) +
+    getCourseTopicSolvedSum(topicRecord, exam, course, grade, field) +
     getCourseGeneralSolvedCount(courseRecord, exam, course)
   );
 }
@@ -159,15 +244,15 @@ export function getTotalSolvedQuestions(
       ? Object.fromEntries(courseRecord)
       : (courseRecord ?? {});
 
-  return (["TYT", "AYT"] as const).reduce((total, exam) => {
-    return (
-      total +
-      Object.keys(masterCurriculum[exam]).reduce((examTotal, course) => {
-        return (
-          examTotal +
-          getCourseSolvedCount(normalizedCourses, exam, course, normalizedTopics)
-        );
-      }, 0)
-    );
-  }, 0);
+  const courseSum = Object.values(normalizedCourses).reduce(
+    (sum, val) => sum + (Number(val) || 0),
+    0,
+  );
+  const topicSum = Object.values(normalizedTopics).reduce(
+    (sum, val) => sum + (Number(val) || 0),
+    0,
+  );
+
+  return courseSum + topicSum;
 }
+

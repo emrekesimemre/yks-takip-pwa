@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FiX } from "react-icons/fi";
 import {
   denemeCoursesByType,
-  type DenemeExamType,
+  getDenemeExamTypesForStudent,
 } from "@/data/denemeCourses";
 import type { MockExam, MockExamCourseResult } from "@/store/useStudentStore";
 import {
@@ -17,6 +17,8 @@ import AnimatedModal from "@/components/ui/AnimatedModal";
 
 type Props = {
   isOpen: boolean;
+  grade?: string;
+  field?: string;
   onClose: () => void;
   onSave: (exam: MockExam) => void;
   exam?: MockExam | null;
@@ -24,11 +26,13 @@ type Props = {
 
 type FormProps = {
   exam?: MockExam | null;
+  grade?: string;
+  field?: string;
   onClose: () => void;
   onSave: (exam: MockExam) => void;
 };
 
-function getInitialFormState(exam?: MockExam | null) {
+function getInitialFormState(exam?: MockExam | null, defaultType = "TYT") {
   if (exam) {
     return {
       name: exam.name,
@@ -41,23 +45,25 @@ function getInitialFormState(exam?: MockExam | null) {
   return {
     name: "",
     date: new Date().toISOString().slice(0, 10),
-    type: "TYT" as DenemeExamType,
-    courses: createEmptyCourseResults("TYT"),
+    type: defaultType,
+    courses: createEmptyCourseResults(defaultType),
   };
 }
 
-function MockExamForm({ exam, onClose, onSave }: FormProps) {
+function MockExamForm({ exam, grade, field, onClose, onSave }: FormProps) {
   const isEditing = exam != null;
-  const initial = getInitialFormState(exam);
+  const availableTypes = getDenemeExamTypesForStudent(grade, field);
+  const defaultType = availableTypes[0]?.type ?? "TYT";
+  const initial = getInitialFormState(exam, defaultType);
   const [name, setName] = useState(initial.name);
   const [date, setDate] = useState(initial.date);
-  const [type, setType] = useState<DenemeExamType>(initial.type);
+  const [type, setType] = useState<string>(initial.type);
   const [courses, setCourses] = useState<MockExamCourseResult[]>(
     initial.courses,
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleTypeChange = (newType: DenemeExamType) => {
+  const handleTypeChange = (newType: string) => {
     setType(newType);
     setCourses(createEmptyCourseResults(newType));
   };
@@ -176,19 +182,19 @@ function MockExamForm({ exam, onClose, onSave }: FormProps) {
           <label className="block text-xs font-semibold text-slate-600 mb-2">
             Deneme Türü
           </label>
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl">
-            {(["TYT", "AYT"] as const).map((t) => (
+          <div className="inline-flex p-1 bg-slate-100 rounded-xl flex-wrap gap-1">
+            {availableTypes.map((t) => (
               <button
-                key={t}
+                key={t.type}
                 type="button"
-                onClick={() => handleTypeChange(t)}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  type === t
+                onClick={() => handleTypeChange(t.type)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  type === t.type
                     ? "bg-white text-blue-700 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                {t}
+                {t.label}
               </button>
             ))}
           </div>
@@ -291,6 +297,8 @@ function MockExamForm({ exam, onClose, onSave }: FormProps) {
 
 export default function AddMockExamModal({
   isOpen,
+  grade,
+  field,
   onClose,
   onSave,
   exam,
@@ -305,6 +313,8 @@ export default function AddMockExamModal({
         <MockExamForm
           key={exam?.id ?? "new"}
           exam={exam}
+          grade={grade}
+          field={field}
           onClose={onClose}
           onSave={onSave}
         />

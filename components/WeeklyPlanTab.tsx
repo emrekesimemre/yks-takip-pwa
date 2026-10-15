@@ -7,7 +7,6 @@ import type {
 } from "@/store/useStudentStore";
 import {
   getCourseSolvedCount,
-  getCourseTopicSolvedSum,
   getIncompleteTopics,
   getTopicMeta,
   getTopicSolvedCount,
@@ -18,13 +17,15 @@ import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput"
 import { FiPrinter, FiCheckCircle, FiRotateCcw } from "react-icons/fi";
 
 type Props = {
+  grade?: string;
+  field?: string;
   topics: TopicProgress[];
   weeklySelectedTopics: string[];
   weeklySolvedQuestionsByCourse: CourseSolvedQuestions;
   weeklySolvedQuestionsByTopic: CourseSolvedQuestions;
   onToggleWeeklySelection: (topicId: string, selected: boolean) => void;
-  onUpdateWeeklySolvedQuestions: (
-    exam: "TYT" | "AYT",
+  onUpdateWeeklySolvedQuestions?: (
+    exam: string,
     course: string,
     count: number,
   ) => void;
@@ -34,18 +35,26 @@ type Props = {
 };
 
 export default function WeeklyPlanTab({
+  grade,
+  field,
   topics,
   weeklySelectedTopics,
   weeklySolvedQuestionsByCourse,
   weeklySolvedQuestionsByTopic,
   onToggleWeeklySelection,
-  onUpdateWeeklySolvedQuestions,
   onUpdateWeeklyTopicSolvedQuestions,
   onPrint,
   onResetWeeklyPlan,
 }: Props) {
-  const incompleteTopics = getIncompleteTopics(topics);
-  const warnings = getPacingWarnings(topics, weeklySelectedTopics);
+  const incompleteTopics = getIncompleteTopics(topics, grade, field);
+  const warnings = getPacingWarnings(
+    topics,
+    weeklySelectedTopics,
+    undefined,
+    undefined,
+    grade,
+    field,
+  );
 
   const grouped = incompleteTopics.reduce<
     Record<string, typeof incompleteTopics>
@@ -120,6 +129,8 @@ export default function WeeklyPlanTab({
               exam,
               course,
               weeklySolvedQuestionsByTopic,
+              grade,
+              field,
             );
 
             return (
@@ -134,18 +145,8 @@ export default function WeeklyPlanTab({
                   <CourseSolvedQuestionsInput
                     label="Bu hafta çözülecek soru sayısı"
                     value={weeklySolved}
-                    onChange={(count) => {
-                      const topicSum = getCourseTopicSolvedSum(
-                        weeklySolvedQuestionsByTopic,
-                        exam,
-                        course,
-                      );
-                      onUpdateWeeklySolvedQuestions(
-                        exam,
-                        course,
-                        Math.max(0, count - topicSum),
-                      );
-                    }}
+                    onChange={() => {}}
+                    disabled
                   />
                 </div>
                 <div className="space-y-1 max-h-72 overflow-y-auto pr-1">

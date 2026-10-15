@@ -19,7 +19,7 @@ const MockExamSchema = new Schema(
   {
     id: { type: String, required: true },
     name: { type: String, required: true },
-    type: { type: String, enum: ["TYT", "AYT"], required: true },
+    type: { type: String, required: true },
     date: { type: String, required: true },
     courses: [MockExamCourseResultSchema],
   },
@@ -29,6 +29,16 @@ const MockExamSchema = new Schema(
 const StudentSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
+    grade: {
+      type: String,
+      enum: ["9", "10", "11", "12", "mezun"],
+      default: "12",
+    },
+    field: {
+      type: String,
+      enum: ["sayisal", "esit-agirlik", "sozel", "dil", "genel", ""],
+      default: "",
+    },
     target: { type: String, trim: true, maxlength: 80 },
     teacherEmail: {
       type: String,
@@ -38,6 +48,12 @@ const StudentSchema = new Schema(
       index: true,
     },
     parentEmail: { type: String, default: "", lowercase: true, trim: true },
+    parentPhone: { type: String, default: "", trim: true, maxlength: 25 },
+    reportToken: {
+      type: String,
+      default: () => crypto.randomUUID(),
+      trim: true,
+    },
     notes: { type: String, default: "", trim: true, maxlength: 1000 },
     topics: [TopicProgressSchema],
     weeklySelectedTopics: { type: [String], default: [] },

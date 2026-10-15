@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { masterCurriculum, type Curriculum } from "@/data/subjects";
+import { getCurriculumForStudent } from "@/data/subjects";
 import type {
   CourseSolvedQuestions,
   TopicProgress,
@@ -18,12 +18,14 @@ import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput"
 import { FiCheck, FiSearch } from "react-icons/fi";
 
 type Props = {
+  grade?: string;
+  field?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   onToggleCompletion: (topicId: string, isCompleted: boolean) => void;
   onUpdateSolvedQuestions: (
-    exam: keyof Curriculum,
+    exam: string,
     course: string,
     count: number,
   ) => void;
@@ -31,6 +33,8 @@ type Props = {
 };
 
 export default function GeneralProgressTab({
+  grade,
+  field,
   topics,
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
@@ -38,18 +42,26 @@ export default function GeneralProgressTab({
   onUpdateSolvedQuestions,
   onUpdateTopicSolvedQuestions,
 }: Props) {
-  const [activeExam, setActiveExam] = useState<keyof Curriculum>("TYT");
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const examSections = Object.keys(studentCurriculum);
+  const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const selectExam = (exam: keyof Curriculum) => {
-    setActiveExam(exam);
+  const activeExam =
+    selectedExam && examSections.includes(selectedExam)
+      ? selectedExam
+      : (examSections[0] ?? "TYT");
+
+  const selectExam = (exam: string) => {
+    setSelectedExam(exam);
     setSearchTerm("");
   };
 
   const getTopicProgress = (topicId: string) =>
     topics.find((t) => t.id === topicId)?.isCompleted ?? false;
 
-  const activeCurriculum = masterCurriculum[activeExam];
+  const activeCurriculum =
+    studentCurriculum[activeExam] ?? Object.values(studentCurriculum)[0] ?? {};
   const query = searchTerm.trim().toLowerCase();
   const hasSearchMatches =
     !query ||
@@ -59,28 +71,30 @@ export default function GeneralProgressTab({
 
   return (
     <div>
-      <div className="inline-flex p-1 bg-slate-100 rounded-xl mb-6">
-        {(["TYT", "AYT"] as const).map((exam) => (
-          <button
-            key={exam}
-            onClick={() => selectExam(exam)}
-            className={`relative px-6 py-2 text-sm font-semibold rounded-lg transition-colors ${
-              activeExam === exam
-                ? "text-blue-700"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {activeExam === exam && (
-              <motion.div
-                layoutId="examTab"
-                className="absolute inset-0 bg-white rounded-lg shadow-sm"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative">{exam} Konuları</span>
-          </button>
-        ))}
-      </div>
+      {examSections.length > 1 && (
+        <div className="inline-flex p-1 bg-slate-100 rounded-xl mb-6">
+          {examSections.map((exam) => (
+            <button
+              key={exam}
+              onClick={() => selectExam(exam)}
+              className={`relative px-6 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                activeExam === exam
+                  ? "text-blue-700"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {activeExam === exam && (
+                <motion.div
+                  layoutId="examTab"
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <span className="relative">{exam} Konuları</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="relative mb-6">
         <FiSearch className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -106,12 +120,16 @@ export default function GeneralProgressTab({
                 activeExam,
                 courseName,
                 topics,
+                grade,
+                field,
               );
               const solvedCount = getCourseSolvedCount(
                 solvedQuestionsByCourse,
                 activeExam,
                 courseName,
                 solvedQuestionsByTopic,
+                grade,
+                field,
               );
               const generalSolved = getCourseGeneralSolvedCount(
                 solvedQuestionsByCourse,

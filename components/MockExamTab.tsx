@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { denemeCoursesByType } from "@/data/denemeCourses";
+import {
+  denemeCoursesByType,
+  getDenemeExamTypesForStudent,
+  getDenemeExamTypeLabel,
+} from "@/data/denemeCourses";
 import type { MockExam } from "@/store/useStudentStore";
 import AddMockExamModal from "@/components/AddMockExamModal";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -21,6 +25,8 @@ import {
 } from "@/utils/deneme";
 
 type Props = {
+  grade?: string;
+  field?: string;
   mockExams: MockExam[];
   onAddExam: (exam: MockExam) => void;
   onUpdateExam: (exam: MockExam) => void;
@@ -28,6 +34,8 @@ type Props = {
 };
 
 export default function MockExamTab({
+  grade,
+  field,
   mockExams,
   onAddExam,
   onUpdateExam,
@@ -36,8 +44,14 @@ export default function MockExamTab({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<MockExam | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<"ALL" | "TYT" | "AYT">("ALL");
+  const [filterType, setFilterType] = useState<string>("ALL");
   const [deleteTarget, setDeleteTarget] = useState<MockExam | null>(null);
+
+  const availableExamTypes = getDenemeExamTypesForStudent(grade, field);
+  const filterOptions = [
+    { key: "ALL", label: "Tümü" },
+    ...availableExamTypes.map((t) => ({ key: t.type, label: t.label })),
+  ];
 
   const filtered =
     filterType === "ALL"
@@ -148,21 +162,23 @@ export default function MockExamTab({
       </div>
 
       {/* Filtre */}
-      <div className="inline-flex p-1 bg-slate-100 rounded-xl gap-0.5">
-        {(["ALL", "TYT", "AYT"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilterType(f)}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              filterType === f
-                ? "bg-white text-blue-700 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {f === "ALL" ? "Tümü" : f}
-          </button>
-        ))}
-      </div>
+      {filterOptions.length > 2 && (
+        <div className="inline-flex p-1 bg-slate-100 rounded-xl gap-0.5 flex-wrap">
+          {filterOptions.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilterType(f.key)}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                filterType === f.key
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {sorted.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
@@ -276,14 +292,8 @@ export default function MockExamTab({
                         className="flex-1 flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left min-w-0"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${
-                              exam.type === "TYT"
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-orange-100 text-orange-700"
-                            }`}
-                          >
-                            {exam.type}
+                          <span className="text-xs font-bold px-2 py-0.5 rounded shrink-0 bg-blue-100 text-blue-700">
+                            {getDenemeExamTypeLabel(exam.type)}
                           </span>
                           <div className="min-w-0">
                             <p className="font-medium text-slate-800 truncate">
@@ -413,6 +423,8 @@ export default function MockExamTab({
 
       <AddMockExamModal
         isOpen={isModalOpen}
+        grade={grade}
+        field={field}
         onClose={handleCloseModal}
         onSave={handleSaveExam}
         exam={editingExam}

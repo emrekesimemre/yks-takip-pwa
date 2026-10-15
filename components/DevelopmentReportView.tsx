@@ -1,6 +1,6 @@
 "use client";
 
-import { masterCurriculum, type Curriculum } from "@/data/subjects";
+import { getCurriculumForStudent } from "@/data/subjects";
 import type {
   CourseSolvedQuestions,
   MockExam,
@@ -41,6 +41,8 @@ const BAR_COLOR = "#4f46e5";
 
 type Props = {
   studentName: string;
+  grade?: string;
+  field?: string;
   target?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
@@ -51,11 +53,15 @@ type Props = {
 function CompletionPie({
   exam,
   topics,
+  grade,
+  field,
 }: {
-  exam: keyof Curriculum;
+  exam: string;
   topics: TopicProgress[];
+  grade?: string;
+  field?: string;
 }) {
-  const progress = getExamProgress(exam, topics);
+  const progress = getExamProgress(exam, topics, grade, field);
   const pieData = [
     { name: "Tamamlanan", value: progress.completed },
     { name: "Kalan", value: progress.total - progress.completed },
@@ -99,11 +105,15 @@ function CompletionPie({
 function CourseBarChart({
   exam,
   topics,
+  grade,
+  field,
 }: {
-  exam: keyof Curriculum;
+  exam: string;
   topics: TopicProgress[];
+  grade?: string;
+  field?: string;
 }) {
-  const data = getCourseProgressList(exam, topics).map((item) => ({
+  const data = getCourseProgressList(exam, topics, grade, field).map((item) => ({
     name: item.course,
     percentage: item.percentage,
     label: `%${item.percentage}`,
@@ -161,13 +171,17 @@ function CourseBarChart({
 
 export default function DevelopmentReportView({
   studentName,
+  grade,
+  field,
   target,
   topics,
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
   mockExams = [],
 }: Props) {
-  const overallProgress = getOverallProgress(topics);
+  const overallProgress = getOverallProgress(topics, grade, field);
+  const studentCurriculum = getCurriculumForStudent(grade, field);
+  const examSections = Object.keys(studentCurriculum);
   const reportDate = new Date().toLocaleDateString("tr-TR", {
     day: "numeric",
     month: "long",
@@ -215,14 +229,30 @@ export default function DevelopmentReportView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
-        <CompletionPie exam="TYT" topics={topics} />
-        <CompletionPie exam="AYT" topics={topics} />
+      <div
+        className={`grid grid-cols-1 ${examSections.length > 1 ? "sm:grid-cols-2" : "max-w-md mx-auto"} gap-8 mb-8`}
+      >
+        {examSections.map((sec) => (
+          <CompletionPie
+            key={sec}
+            exam={sec}
+            topics={topics}
+            grade={grade}
+            field={field}
+          />
+        ))}
       </div>
 
       <div className="space-y-8 mb-8">
-        <CourseBarChart exam="TYT" topics={topics} />
-        <CourseBarChart exam="AYT" topics={topics} />
+        {examSections.map((sec) => (
+          <CourseBarChart
+            key={sec}
+            exam={sec}
+            topics={topics}
+            grade={grade}
+            field={field}
+          />
+        ))}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -230,23 +260,25 @@ export default function DevelopmentReportView({
           Toplam Çözülen Soru Özeti
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {(["TYT", "AYT"] as const).flatMap((exam) =>
-            Object.keys(masterCurriculum[exam])
+          {examSections.flatMap((sec) =>
+            Object.keys(studentCurriculum[sec] ?? {})
               .map((course) => {
                 const count = getCourseSolvedCount(
                   solvedQuestionsByCourse,
-                  exam,
+                  sec,
                   course,
                   solvedQuestionsByTopic,
+                  grade,
+                  field,
                 );
                 if (count === 0) return null;
                 return (
                   <div
-                    key={`${exam}-${course}`}
+                    key={`${sec}-${course}`}
                     className="rounded-lg bg-white border border-slate-100 px-3 py-2"
                   >
                     <p className="text-[11px] text-slate-500 truncate">
-                      {exam} {course}
+                      {sec} {course}
                     </p>
                     <p className="text-lg font-bold text-slate-800">{count}</p>
                   </div>
