@@ -16,7 +16,10 @@ import {
   FiBarChart2,
   FiShield,
   FiDownload,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
+import { toast } from "sonner";
 import AdminStaffPanel from "@/components/AdminStaffPanel";
 import { formatTeacherLabel } from "@/utils/staff-label";
 
@@ -96,50 +99,80 @@ function csvCell(value: string | number | null | undefined): string {
 function downloadStudentsCsv(
   students: StudentOverview[],
   formatTeacher: (email: string) => string,
+  teacherName?: string,
 ) {
-  const header = [
-    "Ad",
-    "Öğretmen",
-    "Hedef",
-    "İlerleme (%)",
-    "Haftalık Konu",
-    "Toplam Soru",
-    "Deneme Sayısı",
-    "Son Net",
-    "Son Güncelleme",
-  ];
+  if (!students || students.length === 0) {
+    toast.error("İndirilecek öğrenci bulunamadı.");
+    return;
+  }
 
-  const rows = students.map((student) => [
-    csvCell(student.name),
-    csvCell(formatTeacher(student.teacherEmail)),
-    csvCell(student.target),
-    csvCell(student.progress),
-    csvCell(student.weeklyTopicCount),
-    csvCell(student.totalSolvedQuestions),
-    csvCell(student.mockExamCount),
-    csvCell(
-      student.latestMockExamNet == null
-        ? ""
-        : student.latestMockExamNet.toFixed(1),
-    ),
-    csvCell(
-      student.updatedAt
-        ? new Date(student.updatedAt).toLocaleDateString("tr-TR")
-        : "",
-    ),
-  ]);
+  try {
+    const header = [
+      "Ad",
+      "Öğretmen",
+      "Hedef",
+      "İlerleme (%)",
+      "Haftalık Konu",
+      "Toplam Soru",
+      "Deneme Sayısı",
+      "Son Net",
+      "Son Güncelleme",
+    ];
 
-  const csv = [header.join(","), ...rows.map((row) => row.join(","))].join(
-    "\n",
-  );
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const stamp = new Date().toISOString().slice(0, 10);
-  link.href = url;
-  link.download = `yks-takip-ogrenciler-${stamp}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+    const rows = students.map((student) => [
+      csvCell(student.name),
+      csvCell(formatTeacher(student.teacherEmail)),
+      csvCell(student.target),
+      csvCell(student.progress),
+      csvCell(student.weeklyTopicCount),
+      csvCell(student.totalSolvedQuestions),
+      csvCell(student.mockExamCount),
+      csvCell(
+        student.latestMockExamNet == null
+          ? ""
+          : student.latestMockExamNet.toFixed(1),
+      ),
+      csvCell(
+        student.updatedAt
+          ? new Date(student.updatedAt).toLocaleDateString("tr-TR")
+          : "",
+      ),
+    ]);
+
+    const csv = [header.join(","), ...rows.map((row) => row.join(","))].join(
+      "\n",
+    );
+    const blob = new Blob([`\uFEFF${csv}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeTeacher = teacherName
+      ? `-${teacherName
+          .toLowerCase()
+          .replace(/[^a-z0-9ğüşıöç]/gi, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "")}`
+      : "";
+    const fileName = `yks-takip-ogrenciler${safeTeacher}-${stamp}.csv`;
+
+    link.href = url;
+    link.download = fileName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 2000);
+
+    toast.success("Öğrenci listesi CSV olarak indirildi.");
+  } catch (error) {
+    console.error("CSV indirme hatası:", error);
+    toast.error("Öğrenci listesi indirilirken bir hata oluştu.");
+  }
 }
 
 function ProgressBar({ value }: { value: number }) {
@@ -395,19 +428,76 @@ function OverviewTabContent({
     ? [[teacherFilter, []]]
     : groupedByTeacher;
 
+  // Akordiyon durum yönetimi:
+  // Varsayılan olarak 2 veya daha az öğretmen grubu varsa hepsi açık,
+  // 2'den fazla ise ilk öğretmen açık, diğerleri kapalı başlar.
+  const [expandedTeachers, setExpandedTeachers] = useState<Set<string>>(() => {
+    if (groupsToShow.length <= 2) {
+      return new Set(groupsToShow.map(([email]) => email));
+    }
+    return new Set(groupsToShow.slice(0, 1).map(([email]) => email));
+  });
+
+  const isSearchActive = search.trim().length > 0;
+
+  // Arama yapılırken veya öğretmen filtresi seçilmişken ilgili kartlar otomatik açık gelir
+  const isTeacherExpanded = (email: string) => {
+    if (isSearchActive || teacherFilter !== "all") return true;
+    return expandedTeachers.has(email);
+  };
+
+  const toggleTeacher = (email: string) => {
+    setExpandedTeachers((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) {
+        next.delete(email);
+      } else {
+        next.add(email);
+      }
+      return next;
+    });
+  };
+
+  const allExpanded =
+    groupsToShow.length > 0 &&
+    groupsToShow.every(([email]) => isTeacherExpanded(email));
+
+  const toggleAll = () => {
+    if (allExpanded) {
+      setExpandedTeachers(new Set());
+    } else {
+      setExpandedTeachers(new Set(groupsToShow.map(([email]) => email)));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
         <button
           type="button"
           onClick={() =>
-            downloadStudentsCsv(filteredStudents, formatTeacherLabel)
+            downloadStudentsCsv(
+              filteredStudents,
+              formatTeacherLabel,
+              teacherFilter !== "all"
+                ? formatTeacherLabel(teacherFilter)
+                : undefined,
+            )
           }
           disabled={filteredStudents.length === 0}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-xl hover:bg-violet-50 hover:text-violet-700 border border-slate-200 hover:border-violet-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+          title={
+            teacherFilter !== "all"
+              ? `${formatTeacherLabel(teacherFilter)} öğretmeninin öğrencilerini CSV olarak indirir`
+              : "Tüm öğretmenlerin öğrencilerini CSV olarak indirir"
+          }
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-xl hover:bg-violet-50 hover:text-violet-700 border border-slate-200 hover:border-violet-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
         >
           <FiDownload />
-          Öğrenci listesini indir
+          <span>
+            {teacherFilter !== "all"
+              ? `${formatTeacherLabel(teacherFilter)} Öğrencilerini İndir (${filteredStudents.length})`
+              : `Tüm Öğrencileri İndir (${filteredStudents.length})`}
+          </span>
         </button>
       </div>
       {summary.truncated && (
@@ -500,124 +590,233 @@ function OverviewTabContent({
           <p className="text-slate-600">Gösterilecek öğrenci bulunamadı.</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupsToShow.map(([teacherEmail, students]) => (
-            <section
-              key={teacherEmail}
-              className="card-premium overflow-hidden border border-slate-100"
-            >
-              <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div>
-                    {teacherEmail ? (
-                      <>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
-                          Öğretmen
-                        </p>
-                        <h2 className="text-lg font-bold text-slate-900">
-                          {formatTeacherLabel(teacherEmail)}
+        <div className="space-y-4">
+          {/* Akordiyon Üst Kontrol Çubuğu */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {groupsToShow.length} Öğretmen Grubu
+            </span>
+            {!isSearchActive &&
+              teacherFilter === "all" &&
+              groupsToShow.length > 1 && (
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:text-violet-800 bg-violet-50 hover:bg-violet-100/80 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  {allExpanded ? <FiChevronUp /> : <FiChevronDown />}
+                  <span>
+                    {allExpanded ? "Tümünü Daralt" : "Tümünü Genişlet"}
+                  </span>
+                </button>
+              )}
+          </div>
+
+          {groupsToShow.map(([teacherEmail, students]) => {
+            const isExpanded = isTeacherExpanded(teacherEmail);
+            const avgProgress =
+              students.length > 0
+                ? Math.round(
+                    students.reduce((sum, s) => sum + (s.progress || 0), 0) /
+                      students.length,
+                  )
+                : 0;
+            const totalSolved = students.reduce(
+              (sum, s) => sum + (s.totalSolvedQuestions || 0),
+              0,
+            );
+
+            return (
+              <section
+                key={teacherEmail}
+                className="card-premium overflow-hidden border border-slate-100 transition-shadow duration-200 hover:shadow-md"
+              >
+                {/* Tıklanabilir Akordiyon Başlığı */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleTeacher(teacherEmail)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleTeacher(teacherEmail);
+                    }
+                  }}
+                  className="w-full text-left px-5 py-4 bg-slate-50/80 hover:bg-slate-100/70 transition-colors cursor-pointer select-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 transition-transform duration-200 shrink-0 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    >
+                      <FiChevronDown className="text-base" />
+                    </div>
+                    <div className="min-w-0">
+                      {teacherEmail ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
+                            Öğretmen
+                          </p>
+                          <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                            {formatTeacherLabel(teacherEmail)}
+                          </h2>
+                          <p className="text-xs text-slate-500 truncate">
+                            {teacherEmail}
+                          </p>
+                        </>
+                      ) : (
+                        <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                          Öğrenciler
                         </h2>
-                        <p className="text-xs text-slate-500">{teacherEmail}</p>
-                      </>
-                    ) : (
-                      <h2 className="text-lg font-bold text-slate-900">
-                        Öğrenciler
-                      </h2>
-                    )}
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-500">
-                    {students.length} öğrenci
+
+                  {/* Özet Rozetler ve Doğrudan İndirme Butonu */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-medium shrink-0">
+                    <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 font-semibold">
+                      {students.length} öğrenci
+                    </span>
+                    {students.length > 0 && (
+                      <>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          Ort. %{avgProgress} ilerleme
+                        </span>
+                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 hidden sm:inline-flex">
+                          {totalSolved.toLocaleString("tr-TR")} soru
+                        </span>
+                      </>
+                    )}
+
+                    {students.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadStudentsCsv(
+                            students,
+                            formatTeacherLabel,
+                            teacherEmail
+                              ? formatTeacherLabel(teacherEmail)
+                              : undefined,
+                          );
+                        }}
+                        title={`${formatTeacherLabel(teacherEmail)} öğretmeninin öğrencilerini CSV olarak indir`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 font-semibold transition-all shadow-2xs active:scale-95 cursor-pointer ml-1"
+                      >
+                        <FiDownload className="text-xs" />
+                        <span>İndir</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px]">
-                  <thead>
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-100">
-                      <th className="px-5 py-3">Öğrenci</th>
-                      <th className="px-5 py-3">Hedef</th>
-                      <th className="px-5 py-3">Konu İlerlemesi</th>
-                      <th className="px-5 py-3">Haftalık Plan</th>
-                      <th className="px-5 py-3">Çözülen Soru</th>
-                      <th className="px-5 py-3">Deneme</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-5 py-10 text-center text-sm text-slate-500"
-                        >
-                          Bu öğretmenin öğrencisi yok.
-                        </td>
-                      </tr>
-                    ) : (
-                      students.map((student) => (
-                        <tr
-                          key={student._id}
-                          className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
-                        >
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-sm font-bold text-blue-700 shrink-0">
-                                {student.name.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="font-semibold text-slate-800">
-                                {student.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                              <FiTarget className="text-blue-400 shrink-0" />
-                              {student.target || "—"}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <ProgressBar value={student.progress} />
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="text-sm text-slate-700">
-                              <span className="inline-flex items-center gap-1.5">
-                                <FiBookOpen className="text-slate-400" />
-                                {student.weeklyTopicCount} konu
-                              </span>
-                              <p className="text-xs text-slate-400 mt-1">
-                                {student.weeklySolvedQuestions} soru (haftalık)
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="text-sm font-medium text-slate-700">
-                              {student.totalSolvedQuestions.toLocaleString(
-                                "tr-TR",
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="text-sm text-slate-700">
-                              <span className="inline-flex items-center gap-1.5">
-                                <FiBarChart2 className="text-slate-400" />
-                                {student.mockExamCount} deneme
-                              </span>
-                              {student.latestMockExamNet !== null && (
-                                <p className="text-xs text-emerald-600 font-medium mt-1">
-                                  Son: {student.latestMockExamNet.toFixed(1)}{" "}
-                                  net
-                                </p>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ))}
+                {/* Katlanabilir Tablo Alanı */}
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      key="accordion-content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="overflow-hidden border-t border-slate-100"
+                    >
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[900px]">
+                          <thead>
+                            <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-100">
+                              <th className="px-5 py-3">Öğrenci</th>
+                              <th className="px-5 py-3">Hedef</th>
+                              <th className="px-5 py-3">Konu İlerlemesi</th>
+                              <th className="px-5 py-3">Haftalık Plan</th>
+                              <th className="px-5 py-3">Çözülen Soru</th>
+                              <th className="px-5 py-3">Deneme</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {students.length === 0 ? (
+                              <tr>
+                                <td
+                                  colSpan={6}
+                                  className="px-5 py-10 text-center text-sm text-slate-500"
+                                >
+                                  Bu öğretmenin öğrencisi yok.
+                                </td>
+                              </tr>
+                            ) : (
+                              students.map((student) => (
+                                <tr
+                                  key={student._id}
+                                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
+                                >
+                                  <td className="px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-sm font-bold text-blue-700 shrink-0">
+                                        {student.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <span className="font-semibold text-slate-800">
+                                        {student.name}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                                      <FiTarget className="text-blue-400 shrink-0" />
+                                      {student.target || "—"}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <ProgressBar value={student.progress} />
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <div className="text-sm text-slate-700">
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <FiBookOpen className="text-slate-400" />
+                                        {student.weeklyTopicCount} konu
+                                      </span>
+                                      <p className="text-xs text-slate-400 mt-1">
+                                        {student.weeklySolvedQuestions} soru
+                                        (haftalık)
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {student.totalSolvedQuestions.toLocaleString(
+                                        "tr-TR",
+                                      )}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <div className="text-sm text-slate-700">
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <FiBarChart2 className="text-slate-400" />
+                                        {student.mockExamCount} deneme
+                                      </span>
+                                      {student.latestMockExamNet !== null && (
+                                        <p className="text-xs text-emerald-600 font-medium mt-1">
+                                          Son:{" "}
+                                          {student.latestMockExamNet.toFixed(1)}{" "}
+                                          net
+                                        </p>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

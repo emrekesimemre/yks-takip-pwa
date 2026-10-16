@@ -8,7 +8,11 @@ import {
   FiCalendar,
   FiCheck,
   FiChevronDown,
+  FiDownload,
+  FiPrinter,
 } from "react-icons/fi";
+import { toast } from "sonner";
+import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   formatDate,
@@ -80,6 +84,32 @@ export default function AdminExamRankings({
   const [isGroupOpen, setIsGroupOpen] = useState(false);
   const dateSelectRef = useRef<HTMLDivElement>(null);
   const groupSelectRef = useRef<HTMLDivElement>(null);
+  const printRankingsRef = useRef<HTMLDivElement>(null);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadRankingPdf = async () => {
+    if (!printRankingsRef.current || !selectedGroup) return;
+    setIsProcessingPdf(true);
+    toast.info("Sıralama listesi PDF olarak hazırlanıyor...");
+    try {
+      const examLabel = `${selectedGroup.type}_${selectedGroup.date}`;
+      const { blob, file } = await generateReportPdfBlob(
+        printRankingsRef.current,
+        `Deneme_Siralama_${examLabel}`,
+      );
+      downloadPdfBlob(blob, file.name);
+      toast.success("Sıralama listesi PDF olarak indirildi.");
+    } catch (err) {
+      console.error("PDF oluşturma hatası:", err);
+      toast.error("PDF oluşturulurken bir hata oluştu.");
+    } finally {
+      setIsProcessingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRankings = async () => {
@@ -389,7 +419,43 @@ export default function AdminExamRankings({
       )}
 
       {selectedGroup && rankings.length > 0 && (
-        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 print:hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Sınav Sonuçları & Kurum Sıralaması
+              </span>
+              <p className="text-xs text-slate-400">
+                {rankings.length} öğrencinin sonuçları listeleniyor
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleDownloadRankingPdf()}
+                disabled={isProcessingPdf}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-violet-600 text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-violet-700 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+                title="Sıralama listesini resmi PDF olarak indir"
+              >
+                <FiDownload />
+                <span>
+                  {isProcessingPdf
+                    ? "PDF Hazırlanıyor..."
+                    : "Sıralama Listesini İndir (PDF)"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-white text-slate-700 border border-slate-200 text-xs sm:text-sm font-medium rounded-xl hover:bg-slate-100 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                title="Yazdır"
+              >
+                <FiPrinter />
+                <span>Yazdır</span>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="rounded-xl bg-white border border-slate-100 px-4 py-3">
               <p className="text-xs text-slate-500 font-medium">Ortalama Net</p>
@@ -422,72 +488,142 @@ export default function AdminExamRankings({
           Bu deneme için seçili filtreye uygun öğrenci bulunamadı.
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px]">
-            <thead>
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-100">
-                <th className="px-5 py-3 w-16">Sıra</th>
-                <th className="px-5 py-3">Öğrenci</th>
-                {showExamNames && <th className="px-5 py-3">Kayıtlı İsim</th>}
-                <th className="px-5 py-3">Öğretmen</th>
-                <th className="px-5 py-3 text-right">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankings.map((entry, index) => (
-                <motion.tr
-                  key={entry.studentId}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors"
-                >
-                  <td className="px-5 py-4">
-                    <RankBadge rank={entry.rank} />
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className="font-semibold text-slate-800">
-                      {entry.studentName}
+        <div ref={printRankingsRef} className="bg-white p-4 sm:p-6 print:p-0">
+          {/* Resmi PDF / Yazdırma Belge Başlığı */}
+          <div className="border-b-2 border-slate-900 pb-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-violet-700">
+                  Kurum Deneme Sınavı Sıralama ve Sonuç Belgesi
+                </p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+                  {selectedGroup
+                    ? `${selectedGroup.type} Deneme Sınavı`
+                    : "Deneme Sıralaması"}
+                </h2>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-1.5">
+                  <span>
+                    Sınav Tarihi:{" "}
+                    <strong>
+                      {selectedGroup ? formatDate(selectedGroup.date) : "—"}
+                    </strong>
+                  </span>
+                  {selectedGroup && formatGroupNames(selectedGroup) && (
+                    <span>
+                      Sınav Adı:{" "}
+                      <strong>{formatGroupNames(selectedGroup)}</strong>
                     </span>
-                  </td>
-                  {showExamNames && (
+                  )}
+                  {teacherFilter !== "all" && (
+                    <span>
+                      Öğretmen:{" "}
+                      <strong>{formatTeacherLabel(teacherFilter)}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {stats.average !== null && (
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-center">
+                    <span className="text-[10px] text-slate-500 uppercase font-semibold">
+                      Katılım
+                    </span>
+                    <p className="text-base font-extrabold text-slate-800">
+                      {rankings.length}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-violet-100 bg-violet-50 px-3 py-1.5 text-center">
+                    <span className="text-[10px] text-violet-600 uppercase font-semibold">
+                      Kurum Ort.
+                    </span>
+                    <p className="text-base font-extrabold text-violet-700">
+                      {stats.average.toFixed(1)} net
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border border-slate-200 rounded-xl overflow-hidden">
+              <thead>
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-700 bg-slate-100/90 border-b border-slate-200">
+                  <th className="px-5 py-3 w-16">Sıra</th>
+                  <th className="px-5 py-3">Öğrenci</th>
+                  {showExamNames && <th className="px-5 py-3">Kayıtlı İsim</th>}
+                  <th className="px-5 py-3">Öğretmen</th>
+                  <th className="px-5 py-3 text-right">Net</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rankings.map((entry, index) => (
+                  <motion.tr
+                    key={entry.studentId}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="hover:bg-slate-50/60 transition-colors"
+                  >
                     <td className="px-5 py-4">
-                      <span className="text-sm text-slate-600">
-                        {entry.examName}
+                      <RankBadge rank={entry.rank} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="font-semibold text-slate-800">
+                        {entry.studentName}
                       </span>
                     </td>
-                  )}
-                  <td className="px-5 py-4">
-                    {entry.teacherEmail ? (
-                      <>
-                        <div className="text-sm text-slate-600">
-                          {formatTeacherLabel(entry.teacherEmail)}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          {entry.teacherEmail}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-slate-400">—</div>
+                    {showExamNames && (
+                      <td className="px-5 py-4">
+                        <span className="text-sm text-slate-600">
+                          {entry.examName}
+                        </span>
+                      </td>
                     )}
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <span
-                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold ${
-                        entry.rank === 1
-                          ? "bg-emerald-50 text-emerald-700"
-                          : entry.rank <= 3
-                            ? "bg-violet-50 text-violet-700"
-                            : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {entry.net.toFixed(1)}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                    <td className="px-5 py-4">
+                      {entry.teacherEmail ? (
+                        <>
+                          <div className="text-sm text-slate-600">
+                            {formatTeacherLabel(entry.teacherEmail)}
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {entry.teacherEmail}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-slate-400">—</div>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <span
+                        className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold ${
+                          entry.rank === 1
+                            ? "bg-emerald-50 text-emerald-700"
+                            : entry.rank <= 3
+                              ? "bg-violet-50 text-violet-700"
+                              : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {entry.net.toFixed(1)}
+                      </span>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
+            <span>Kurum İçi Deneme Sınavı Değerlendirme Belgesi</span>
+            <span>
+              {new Date().toLocaleDateString("tr-TR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+          </div>
         </div>
       )}
     </section>

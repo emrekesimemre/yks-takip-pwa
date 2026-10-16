@@ -671,6 +671,8 @@ export default function StudentDetailClient({
                   />
                 ) : (
                   <MockExamTab
+                    studentName={currentStudent.name}
+                    target={currentStudent.target}
                     grade={currentStudent.grade}
                     field={currentStudent.field}
                     mockExams={mockExams}

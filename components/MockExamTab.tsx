@@ -10,7 +10,15 @@ import {
 import type { MockExam } from "@/store/useStudentStore";
 import AddMockExamModal from "@/components/AddMockExamModal";
 import ConfirmModal from "@/components/ConfirmModal";
-import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import {
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiChevronDown,
+  FiChevronUp,
+  FiFileText,
+} from "react-icons/fi";
+import MockExamReportModal from "@/components/MockExamReportModal";
 import {
   analyzeByCourse,
   calculateCourseNet,
@@ -25,8 +33,10 @@ import {
 } from "@/utils/deneme";
 
 type Props = {
+  studentName?: string;
   grade?: string;
   field?: string;
+  target?: string;
   mockExams: MockExam[];
   onAddExam: (exam: MockExam) => void;
   onUpdateExam: (exam: MockExam) => void;
@@ -34,14 +44,17 @@ type Props = {
 };
 
 export default function MockExamTab({
+  studentName,
   grade,
   field,
+  target,
   mockExams,
   onAddExam,
   onUpdateExam,
   onDeleteExam,
 }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<MockExam | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>("ALL");
@@ -124,15 +137,27 @@ export default function MockExamTab({
             Ders bazlı doğru/yanlış girişi ve performans takibi
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleOpenAddModal}
-          className="btn-primary shrink-0"
-        >
-          <FiPlus />
-          Yeni Deneme Ekle
-        </motion.button>
+        <div className="flex items-center gap-2">
+          {mockExams.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsReportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white text-indigo-700 border border-indigo-200 text-sm font-semibold rounded-xl hover:bg-indigo-50 hover:border-indigo-300 active:scale-95 transition-all shadow-2xs cursor-pointer"
+            >
+              <FiFileText className="text-base" />
+              <span>Deneme Karnesi (PDF)</span>
+            </button>
+          )}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleOpenAddModal}
+            className="btn-primary shrink-0"
+          >
+            <FiPlus />
+            Yeni Deneme Ekle
+          </motion.button>
+        </div>
       </div>
 
       {/* Özet kartlar */}
@@ -442,6 +467,16 @@ export default function MockExamTab({
         variant="danger"
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <MockExamReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        studentName={studentName || "Öğrenci"}
+        grade={grade}
+        field={field}
+        target={target}
+        mockExams={mockExams}
       />
     </div>
   );

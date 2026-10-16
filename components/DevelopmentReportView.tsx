@@ -1,6 +1,7 @@
 "use client";
 
 import { getCurriculumForStudent } from "@/data/subjects";
+import { getDenemeCourseDef } from "@/data/denemeCourses";
 import type {
   CourseSolvedQuestions,
   MockExam,
@@ -15,6 +16,7 @@ import {
 } from "@/utils/curriculum";
 import {
   analyzeByCourse,
+  calculateCourseNet,
   calculateExamTotalNet,
   formatDate,
   getExamTrend,
@@ -213,6 +215,11 @@ export default function DevelopmentReportView({
     return Math.round(calculateExamTotalNet(sorted[0]) * 10) / 10;
   };
 
+  const sortedMockExams = [...mockExams].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  const latestExam = sortedMockExams[0];
+
   return (
     <div className="p-6 sm:p-8 bg-white text-slate-900">
       <div className="border-b border-slate-200 pb-5 mb-6">
@@ -331,6 +338,87 @@ export default function DevelopmentReportView({
               </div>
             ))}
           </div>
+
+          {/* Son Deneme Karnesi */}
+          {latestExam && (
+            <div className="mb-6 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 mb-3 border-b border-indigo-100 gap-2">
+                <div>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+                    Son Deneme Sınavı Karnesi
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {latestExam.name || "Deneme Sınavı"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {formatDate(latestExam.date)} ·{" "}
+                    <span className="font-semibold text-indigo-600">
+                      {latestExam.type}
+                    </span>
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-sm self-start sm:self-auto">
+                  <span>Toplam Net:</span>
+                  <span className="text-lg font-extrabold">
+                    {calculateExamTotalNet(latestExam).toFixed(1)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Ders ders doğru-yanlış-net dökümü */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs bg-white rounded-lg overflow-hidden border border-slate-100 shadow-2xs">
+                  <thead>
+                    <tr className="text-left bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                      <th className="py-2.5 px-3">Ders</th>
+                      <th className="py-2.5 px-3 text-center text-emerald-700">
+                        Doğru
+                      </th>
+                      <th className="py-2.5 px-3 text-center text-rose-700">
+                        Yanlış
+                      </th>
+                      <th className="py-2.5 px-3 text-center text-slate-500">
+                        Boş
+                      </th>
+                      <th className="py-2.5 px-3 text-right text-indigo-700 font-bold">
+                        Net
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {latestExam.courses.map((c) => {
+                      const net = calculateCourseNet(c);
+                      const courseName =
+                        getDenemeCourseDef(latestExam.type, c.courseKey)?.name ||
+                        c.courseKey;
+                      return (
+                        <tr
+                          key={c.courseKey}
+                          className="hover:bg-slate-50/70 transition-colors"
+                        >
+                          <td className="py-2 px-3 font-semibold text-slate-800">
+                            {courseName}
+                          </td>
+                          <td className="py-2 px-3 text-center font-bold text-emerald-600">
+                            {c.correct}
+                          </td>
+                          <td className="py-2 px-3 text-center font-bold text-rose-600">
+                            {c.wrong}
+                          </td>
+                          <td className="py-2 px-3 text-center text-slate-400">
+                            {c.empty ?? 0}
+                          </td>
+                          <td className="py-2 px-3 text-right font-extrabold text-indigo-600">
+                            {net.toFixed(1)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Son deneme */}
           {(lastNet(tytExams) != null || lastNet(aytExams) != null) && (
