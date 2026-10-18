@@ -14,7 +14,11 @@ import {
 import { getPacingWarnings } from "@/utils/pacing";
 import PacingAlert from "@/components/PacingAlert";
 import CourseSolvedQuestionsInput from "@/components/CourseSolvedQuestionsInput";
-import { FiPrinter, FiCheckCircle, FiRotateCcw } from "react-icons/fi";
+import {
+  FiPrinter,
+  FiCheckCircle,
+  FiRotateCcw,
+} from "react-icons/fi";
 
 type Props = {
   grade?: string;
@@ -107,6 +111,7 @@ export default function WeeklyPlanTab({
       </div>
 
       <PacingAlert warnings={warnings} />
+
 
       {incompleteTopics.length === 0 ? (
         <div className="text-center py-16 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
@@ -208,11 +213,11 @@ export default function WeeklyPlanTab({
           <h3 className="text-sm font-bold text-slate-700 mb-3">
             Seçilen Konular
             <span className="ml-2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-              {weeklySelectedTopics.length}
+              {Array.from(new Set(weeklySelectedTopics)).length}
             </span>
           </h3>
           <div className="flex flex-wrap gap-2">
-            {weeklySelectedTopics.map((id) => {
+            {Array.from(new Set(weeklySelectedTopics)).map((id) => {
               const meta = getTopicMeta(id);
               if (!meta) return null;
               return (

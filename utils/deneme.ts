@@ -13,16 +13,27 @@ export function calculateExamTotalNet(exam: MockExam): number {
   return exam.courses.reduce((sum, c) => sum + calculateCourseNet(c), 0);
 }
 
+export function formatNet(net: number): string {
+  const val = Math.round(net * 100) / 100;
+  if (Number.isInteger(val)) return val.toString();
+  const str = val.toFixed(2);
+  return str.endsWith("0") ? str.slice(0, -1) : str;
+}
+
 export function calculateExamTotals(exam: MockExam) {
   const correct = exam.courses.reduce((s, c) => s + c.correct, 0);
   const wrong = exam.courses.reduce((s, c) => s + c.wrong, 0);
   const empty = exam.courses.reduce((s, c) => s + c.empty, 0);
   const net = calculateNet(correct, wrong);
   const total = correct + wrong + empty;
-  const maxTotal = (denemeCoursesByType[exam.type] ?? []).reduce(
-    (s, c) => s + c.maxQuestions,
-    0,
-  );
+  const courseDefs = denemeCoursesByType[exam.type] ?? [];
+  const maxTotal =
+    exam.courses.length > 0
+      ? exam.courses.reduce((s, c) => {
+          const def = courseDefs.find((d) => d.key === c.courseKey);
+          return s + (def?.maxQuestions ?? (c.correct + c.wrong + c.empty));
+        }, 0)
+      : courseDefs.reduce((s, c) => s + c.maxQuestions, 0);
 
   return { correct, wrong, empty, net, total, maxTotal };
 }
@@ -106,12 +117,15 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
       const def = (denemeCoursesByType[exam.type] ?? []).find(
         (d) => d.key === c.courseKey,
       );
-      if (!def) return;
       if (!hasAnsweredQuestions(c.correct, c.wrong, c.empty)) return;
 
+      const courseName = c.courseName || def?.name || c.courseKey;
+      const maxQuestions =
+        def?.maxQuestions || c.correct + c.wrong + c.empty || 20;
+
       const existing = stats.get(c.courseKey) ?? {
-        courseName: def.name,
-        maxQuestions: def.maxQuestions,
+        courseName,
+        maxQuestions,
         nets: [],
         corrects: [],
         wrongs: [],
@@ -124,7 +138,7 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
       existing.wrongs.push(c.wrong);
       existing.empties.push(c.empty);
       existing.segments.push(
-        getProgressSegments(c.correct, c.wrong, c.empty, def.maxQuestions),
+        getProgressSegments(c.correct, c.wrong, c.empty, maxQuestions),
       );
       stats.set(c.courseKey, existing);
     });
@@ -177,11 +191,16 @@ export function getExamTrend(exams: MockExam[]): {
     }));
 }
 
-export function createEmptyCourseResults(
-  type: string,
-): MockExamCourseResult[] {
-  return (denemeCoursesByType[type] ?? []).map((c) => ({
+export function createEmptyCourseResults(type: string): MockExamCourseResult[] {
+  const defs = denemeCoursesByType[type] ?? [];
+  const filtered =
+    type === "TYT"
+      ? defs.filter((c) => c.key !== "TYT-Sosyal" && c.key !== "TYT-Fen")
+      : defs;
+
+  return filtered.map((c) => ({
     courseKey: c.key,
+    courseName: c.name,
     correct: 0,
     wrong: 0,
     empty: 0,
@@ -192,10 +211,15 @@ export function mergeCourseResults(
   type: string,
   existing: MockExamCourseResult[],
 ): MockExamCourseResult[] {
-  return createEmptyCourseResults(type).map((c) => {
-    const found = existing.find((e) => e.courseKey === c.courseKey);
-    return found ?? c;
-  });
+  const empty = createEmptyCourseResults(type);
+  const result: MockExamCourseResult[] = [...existing];
+
+  for (const emp of empty) {
+    if (!result.some((r) => r.courseKey === emp.courseKey)) {
+      result.push(emp);
+    }
+  }
+  return result;
 }
 
 function avg(nums: number[]): number {

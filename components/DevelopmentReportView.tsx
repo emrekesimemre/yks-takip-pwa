@@ -19,6 +19,7 @@ import {
   calculateCourseNet,
   calculateExamTotalNet,
   formatDate,
+  formatNet,
   getExamTrend,
   getWeakestCourses,
 } from "@/utils/deneme";
@@ -205,14 +206,14 @@ export default function DevelopmentReportView({
   const avgNet = (exams: MockExam[]) => {
     if (exams.length === 0) return null;
     const sum = exams.reduce((s, e) => s + calculateExamTotalNet(e), 0);
-    return Math.round((sum / exams.length) * 10) / 10;
+    return Math.round((sum / exams.length) * 100) / 100;
   };
   const lastNet = (exams: MockExam[]) => {
     if (exams.length === 0) return null;
     const sorted = [...exams].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-    return Math.round(calculateExamTotalNet(sorted[0]) * 10) / 10;
+    return calculateExamTotalNet(sorted[0]);
   };
 
   const sortedMockExams = [...mockExams].sort(
@@ -321,12 +322,12 @@ export default function DevelopmentReportView({
               { label: "TYT Deneme Sayısı", value: tytExams.length || "—" },
               {
                 label: "TYT Ort. Net",
-                value: avgNet(tytExams) != null ? avgNet(tytExams) : "—",
+                value: avgNet(tytExams) != null ? formatNet(avgNet(tytExams)!) : "—",
               },
               { label: "AYT Deneme Sayısı", value: aytExams.length || "—" },
               {
                 label: "AYT Ort. Net",
-                value: avgNet(aytExams) != null ? avgNet(aytExams) : "—",
+                value: avgNet(aytExams) != null ? formatNet(avgNet(aytExams)!) : "—",
               },
             ].map((s) => (
               <div
@@ -360,7 +361,7 @@ export default function DevelopmentReportView({
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-sm self-start sm:self-auto">
                   <span>Toplam Net:</span>
                   <span className="text-lg font-extrabold">
-                    {calculateExamTotalNet(latestExam).toFixed(1)}
+                    {formatNet(calculateExamTotalNet(latestExam))}
                   </span>
                 </div>
               </div>
@@ -389,6 +390,7 @@ export default function DevelopmentReportView({
                     {latestExam.courses.map((c) => {
                       const net = calculateCourseNet(c);
                       const courseName =
+                        c.courseName ||
                         getDenemeCourseDef(latestExam.type, c.courseKey)?.name ||
                         c.courseKey;
                       return (
@@ -409,7 +411,7 @@ export default function DevelopmentReportView({
                             {c.empty ?? 0}
                           </td>
                           <td className="py-2 px-3 text-right font-extrabold text-indigo-600">
-                            {net.toFixed(1)}
+                            {formatNet(net)}
                           </td>
                         </tr>
                       );
@@ -426,13 +428,13 @@ export default function DevelopmentReportView({
               {lastNet(tytExams) != null && (
                 <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-blue-800">Son TYT Denemesi</p>
-                  <p className="text-2xl font-bold text-blue-700">{lastNet(tytExams)} net</p>
+                  <p className="text-2xl font-bold text-blue-700">{formatNet(lastNet(tytExams)!)} net</p>
                 </div>
               )}
               {lastNet(aytExams) != null && (
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-indigo-800">Son AYT Denemesi</p>
-                  <p className="text-2xl font-bold text-indigo-700">{lastNet(aytExams)} net</p>
+                  <p className="text-2xl font-bold text-indigo-700">{formatNet(lastNet(aytExams)!)} net</p>
                 </div>
               )}
             </div>
@@ -509,7 +511,7 @@ export default function DevelopmentReportView({
                   data={courseAnalysis.map((c) => ({
                     name: c.courseName,
                     net: c.avgNet,
-                    label: c.avgNet.toFixed(1),
+                    label: formatNet(c.avgNet),
                   }))}
                   layout="vertical"
                   margin={{ top: 4, right: 48, left: 4, bottom: 4 }}
@@ -543,7 +545,7 @@ export default function DevelopmentReportView({
                     key={c.courseKey}
                     className="px-3 py-1 bg-white border border-amber-200 rounded-full text-xs font-semibold text-amber-800"
                   >
-                    {c.courseName} — ort. {c.avgNet.toFixed(1)} net
+                    {c.courseName} — ort. {formatNet(c.avgNet)} net
                   </span>
                 ))}
               </div>
@@ -585,7 +587,7 @@ export default function DevelopmentReportView({
                           {formatDate(exam.date)}
                         </td>
                         <td className="px-3 py-2 text-right font-bold text-blue-600">
-                          {calculateExamTotalNet(exam).toFixed(1)}
+                          {formatNet(calculateExamTotalNet(exam))}
                         </td>
                       </tr>
                     ))}

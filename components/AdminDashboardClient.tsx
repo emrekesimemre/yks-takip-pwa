@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import AdminStaffPanel from "@/components/AdminStaffPanel";
 import { formatTeacherLabel } from "@/utils/staff-label";
+import { formatNet } from "@/utils/deneme";
 
 type AdminTab = "overview" | "exams" | "staff";
 
@@ -130,7 +131,7 @@ function downloadStudentsCsv(
       csvCell(
         student.latestMockExamNet == null
           ? ""
-          : student.latestMockExamNet.toFixed(1),
+          : formatNet(student.latestMockExamNet),
       ),
       csvCell(
         student.updatedAt
@@ -799,7 +800,7 @@ function OverviewTabContent({
                                       {student.latestMockExamNet !== null && (
                                         <p className="text-xs text-emerald-600 font-medium mt-1">
                                           Son:{" "}
-                                          {student.latestMockExamNet.toFixed(1)}{" "}
+                                          {formatNet(student.latestMockExamNet)}{" "}
                                           net
                                         </p>
                                       )}

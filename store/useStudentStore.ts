@@ -10,6 +10,7 @@ export type TopicSolvedQuestions = Record<string, number>;
 
 export type MockExamCourseResult = {
   courseKey: string;
+  courseName?: string;
   correct: number;
   wrong: number;
   empty: number;
@@ -24,12 +25,38 @@ export type StudentField =
   | "genel"
   | "";
 
+export type MockExamWrongTopic = {
+  courseKey?: string;
+  courseName?: string;
+  topicName: string;
+  questionCount?: number;
+  correctCount?: number;
+  wrongCount: number;
+  emptyCount?: number;
+  matchedTopicId?: string;
+  matchedTopicTitle?: string;
+};
+
+export type MockExamTopicResult = {
+  courseKey?: string;
+  courseName?: string;
+  topicName: string;
+  questionCount?: number;
+  correctCount?: number;
+  wrongCount?: number;
+  emptyCount?: number;
+  matchedTopicId?: string;
+  matchedTopicTitle?: string;
+};
+
 export type MockExam = {
   id: string;
   name: string;
   type: string;
   date: string;
   courses: MockExamCourseResult[];
+  topics?: MockExamTopicResult[];
+  wrongTopics?: MockExamWrongTopic[];
 };
 
 export type Student = {

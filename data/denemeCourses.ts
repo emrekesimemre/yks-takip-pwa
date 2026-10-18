@@ -19,8 +19,15 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
   TYT: [
     { key: "TYT-Turkce", name: "Türkçe", maxQuestions: 40 },
     { key: "TYT-Matematik", name: "Matematik", maxQuestions: 40 },
-    { key: "TYT-Fen", name: "Fen Bilimleri", maxQuestions: 20 },
+    { key: "TYT-Tarih", name: "Tarih", maxQuestions: 5 },
+    { key: "TYT-Cografya", name: "Coğrafya", maxQuestions: 5 },
+    { key: "TYT-Felsefe", name: "Felsefe", maxQuestions: 5 },
+    { key: "TYT-Din", name: "Din Kültürü", maxQuestions: 5 },
+    { key: "TYT-Fizik", name: "Fizik", maxQuestions: 7 },
+    { key: "TYT-Kimya", name: "Kimya", maxQuestions: 7 },
+    { key: "TYT-Biyoloji", name: "Biyoloji", maxQuestions: 6 },
     { key: "TYT-Sosyal", name: "Sosyal Bilimler", maxQuestions: 20 },
+    { key: "TYT-Fen", name: "Fen Bilimleri", maxQuestions: 20 },
   ],
   AYT: [
     { key: "AYT-Matematik", name: "Matematik", maxQuestions: 40 },

@@ -20,7 +20,8 @@ export default function WeeklyPlanPrintView({
   weeklySolvedQuestionsByTopic = {},
   printVisible = false,
 }: Props) {
-  const selectedTopics = weeklySelectedTopics
+  const uniqueIds = Array.from(new Set(weeklySelectedTopics));
+  const selectedTopics = uniqueIds
     .map((id) => getTopicMeta(id))
     .filter(Boolean);
 
@@ -30,7 +31,9 @@ export default function WeeklyPlanPrintView({
     if (!topic) return acc;
     const key = `${topic.exam}__${topic.course}`;
     if (!acc[key]) acc[key] = [];
-    acc[key].push(topic);
+    if (!acc[key].some((t) => t.id === topic.id)) {
+      acc[key].push(topic);
+    }
     return acc;
   }, {});
 
@@ -98,13 +101,16 @@ export default function WeeklyPlanPrintView({
                     )}
                   </div>
                   <ul className="space-y-2.5">
-                    {groupTopics.map((topic) => {
+                    {groupTopics.map((topic, topicIdx) => {
                       const topicCount = getTopicSolvedCount(
                         weeklySolvedQuestionsByTopic,
                         topic.id,
                       );
                       return (
-                        <li key={topic.id} className="flex items-center gap-3">
+                        <li
+                          key={`${key}__${topic.id}__${topicIdx}`}
+                          className="flex items-center gap-3"
+                        >
                           <span className="inline-block w-4 h-4 border-2 border-black shrink-0" />
                           <span className="text-black flex-1">{topic.title}</span>
                           {topicCount > 0 && (

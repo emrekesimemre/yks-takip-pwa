@@ -22,6 +22,7 @@ import {
   calculateExamTotalNet,
   calculateExamTotals,
   formatDate,
+  formatNet,
   getExamTrend,
   getWeakestCourses,
 } from "@/utils/deneme";
@@ -101,8 +102,8 @@ function MockExamReportBody({
   const maxNet = allNets.length > 0 ? Math.max(...allNets) : null;
   const avgTotalNet =
     allNets.length > 0
-      ? Math.round((allNets.reduce((s, n) => s + n, 0) / allNets.length) * 10) /
-        10
+      ? Math.round((allNets.reduce((s, n) => s + n, 0) / allNets.length) * 100) /
+        100
       : null;
 
   const reportDate = new Date().toLocaleDateString("tr-TR", {
@@ -339,7 +340,7 @@ function MockExamReportBody({
                 Son Sınav Neti
               </span>
               <p className="text-2xl font-black text-slate-900 mt-1">
-                {latestTotals ? latestTotals.net.toFixed(1) : "—"}
+                {latestTotals ? formatNet(latestTotals.net) : "—"}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
@@ -347,7 +348,7 @@ function MockExamReportBody({
                 Genel Ortalama Net
               </span>
               <p className="text-2xl font-black text-slate-900 mt-1">
-                {avgTotalNet !== null ? avgTotalNet.toFixed(1) : "—"}
+                {avgTotalNet !== null ? formatNet(avgTotalNet) : "—"}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
@@ -355,7 +356,7 @@ function MockExamReportBody({
                 En Yüksek Net
               </span>
               <p className="text-2xl font-black text-emerald-600 mt-1">
-                {maxNet !== null ? maxNet.toFixed(1) : "—"}
+                {maxNet !== null ? formatNet(maxNet) : "—"}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
@@ -395,7 +396,7 @@ function MockExamReportBody({
                       Sınav Neti
                     </span>
                     <p className="text-2xl font-black text-indigo-700 leading-tight">
-                      {calculateExamTotalNet(latestExam).toFixed(1)}
+                      {formatNet(calculateExamTotalNet(latestExam))}
                     </p>
                   </div>
                 </div>
@@ -425,11 +426,12 @@ function MockExamReportBody({
                     {latestExam.courses.map((c) => {
                       const net = calculateCourseNet(c);
                       const courseName =
+                        c.courseName ||
                         getDenemeCourseDef(latestExam.type, c.courseKey)?.name ||
                         c.courseKey;
                       return (
                         <tr
-                          key={c.courseKey}
+                           key={c.courseKey}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="py-2 px-3 font-semibold text-slate-800">
@@ -445,7 +447,7 @@ function MockExamReportBody({
                             {c.empty ?? 0}
                           </td>
                           <td className="py-2 px-3 text-right font-black text-indigo-600 text-sm">
-                            {net.toFixed(1)}
+                            {formatNet(net)}
                           </td>
                         </tr>
                       );
@@ -465,7 +467,7 @@ function MockExamReportBody({
                           {latestTotals.empty}
                         </td>
                         <td className="py-2.5 px-3 text-right text-indigo-700 text-base font-black">
-                          {latestTotals.net.toFixed(1)}
+                          {formatNet(latestTotals.net)}
                         </td>
                       </tr>
                     </tfoot>
@@ -583,7 +585,7 @@ function MockExamReportBody({
                   data={courseAnalysis.map((c) => ({
                     name: c.courseName,
                     net: c.avgNet,
-                    label: `${c.avgNet.toFixed(1)} net`,
+                    label: `${formatNet(c.avgNet)} net`,
                   }))}
                   layout="vertical"
                   margin={{ top: 4, right: 60, left: 10, bottom: 4 }}
@@ -638,7 +640,7 @@ function MockExamReportBody({
                     key={c.courseKey}
                     className="px-3 py-1 bg-white border border-amber-300 rounded-full text-xs font-bold text-amber-900 shadow-2xs"
                   >
-                    {c.courseName} (Ort. {c.avgNet.toFixed(1)} net)
+                    {c.courseName} (Ort. {formatNet(c.avgNet)} net)
                   </span>
                 ))}
               </div>
@@ -685,7 +687,7 @@ function MockExamReportBody({
                           </span>
                         </td>
                         <td className="py-2 px-3 text-right font-black text-indigo-600 text-sm">
-                          {calculateExamTotalNet(exam).toFixed(1)}
+                          {formatNet(calculateExamTotalNet(exam))}
                         </td>
                       </tr>
                     ))}

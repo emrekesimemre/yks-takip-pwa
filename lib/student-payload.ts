@@ -13,9 +13,34 @@ const solvedMapSchema = z
 
 const mockExamCourseSchema = z.object({
   courseKey: z.string().min(1).max(80),
+  courseName: z.string().max(80).optional(),
   correct: z.number().int().min(0).max(200),
   wrong: z.number().int().min(0).max(200),
   empty: z.number().int().min(0).max(200),
+});
+
+const mockExamTopicSchema = z.object({
+  courseKey: z.string().max(80).optional(),
+  courseName: z.string().max(80).optional(),
+  topicName: z.string().min(1).max(200),
+  questionCount: z.number().int().min(0).max(100).optional(),
+  correctCount: z.number().int().min(0).max(100).optional(),
+  wrongCount: z.number().int().min(0).max(100).optional(),
+  emptyCount: z.number().int().min(0).max(100).optional(),
+  matchedTopicId: z.string().max(100).optional(),
+  matchedTopicTitle: z.string().max(200).optional(),
+});
+
+const mockExamWrongTopicSchema = z.object({
+  courseKey: z.string().max(80).optional(),
+  courseName: z.string().max(80).optional(),
+  topicName: z.string().min(1).max(200),
+  questionCount: z.number().int().min(0).max(100).optional(),
+  correctCount: z.number().int().min(0).max(100).optional(),
+  wrongCount: z.number().int().min(0).max(100).optional(),
+  emptyCount: z.number().int().min(0).max(100).optional(),
+  matchedTopicId: z.string().max(100).optional(),
+  matchedTopicTitle: z.string().max(200).optional(),
 });
 
 const mockExamSchema = z.object({
@@ -24,6 +49,8 @@ const mockExamSchema = z.object({
   type: z.string().min(1).max(40),
   date: z.string().min(4).max(40),
   courses: z.array(mockExamCourseSchema).max(30),
+  topics: z.array(mockExamTopicSchema).max(500).optional(),
+  wrongTopics: z.array(mockExamWrongTopicSchema).max(500).optional(),
 });
 
 export const createStudentSchema = z.object({

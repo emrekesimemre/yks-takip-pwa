@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   denemeCoursesByType,
@@ -9,6 +9,7 @@ import {
 } from "@/data/denemeCourses";
 import type { MockExam } from "@/store/useStudentStore";
 import AddMockExamModal from "@/components/AddMockExamModal";
+import UploadMockExamModal from "@/components/UploadMockExamModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import {
   FiPlus,
@@ -17,7 +18,13 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiFileText,
+  FiCamera,
+  FiAlertTriangle,
+  FiList,
+  FiCheck,
+  FiCalendar,
 } from "react-icons/fi";
+import { toast } from "sonner";
 import MockExamReportModal from "@/components/MockExamReportModal";
 import {
   analyzeByCourse,
@@ -25,6 +32,7 @@ import {
   calculateExamTotalNet,
   calculateExamTotals,
   formatDate,
+  formatNet,
   formatSuccessRate,
   getExamTrend,
   getProgressSegments,
@@ -38,6 +46,8 @@ type Props = {
   field?: string;
   target?: string;
   mockExams: MockExam[];
+  weeklySelectedTopics?: string[];
+  onAddTopicsToPlan?: (topicIds: string[]) => void;
   onAddExam: (exam: MockExam) => void;
   onUpdateExam: (exam: MockExam) => void;
   onDeleteExam: (examId: string) => void;
@@ -49,11 +59,14 @@ export default function MockExamTab({
   field,
   target,
   mockExams,
+  weeklySelectedTopics,
+  onAddTopicsToPlan,
   onAddExam,
   onUpdateExam,
   onDeleteExam,
 }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<MockExam | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -119,6 +132,11 @@ export default function MockExamTab({
     }
   };
 
+  const handleSaveFromUploadModal = (exam: MockExam) => {
+    onAddExam(exam);
+    setExpandedId(exam.id);
+  };
+
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
     onDeleteExam(deleteTarget.id);
@@ -137,7 +155,16 @@ export default function MockExamTab({
             Ders bazlı doğru/yanlış girişi ve performans takibi
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-violet-700 hover:to-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-200 cursor-pointer"
+          >
+            <FiCamera className="text-base" />
+            <span>Karneden Tara (AI)</span>
+          </motion.button>
           {mockExams.length > 0 && (
             <button
               type="button"
@@ -165,10 +192,10 @@ export default function MockExamTab({
         <SummaryCard label="Toplam Deneme" value={String(filtered.length)} />
         <SummaryCard
           label="Son Deneme Neti"
-          value={lastNet !== null ? lastNet.toFixed(1) : "—"}
+          value={lastNet !== null ? formatNet(lastNet) : "—"}
           accent
         />
-        <SummaryCard label="Ortalama Net" value={avgNet.toFixed(1)} />
+        <SummaryCard label="Ortalama Net" value={formatNet(avgNet)} />
         <SummaryCard
           label={
             weakestCourses.length > 1 ? "En Zayıf Dersler" : "En Zayıf Ders"
@@ -180,11 +207,48 @@ export default function MockExamTab({
           }
           sub={
             weakestCourses.length > 0
-              ? `Ort. ${weakestCourses[0].avgNet.toFixed(1)} net`
+              ? `Ort. ${formatNet(weakestCourses[0].avgNet)} net`
               : undefined
           }
         />
       </div>
+
+      {/* Son Deneme Konu Özeti */}
+      {((lastExam?.topics && lastExam.topics.length > 0) ||
+        (lastExam?.wrongTopics && lastExam.wrongTopics.length > 0)) && (
+        <div
+          onClick={() =>
+            setExpandedId(expandedId === lastExam.id ? null : lastExam.id)
+          }
+          className="p-4 bg-gradient-to-r from-indigo-50/80 via-blue-50/80 to-purple-50/80 border border-indigo-200 rounded-2xl shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:border-indigo-300 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">
+              <FiList className="text-xl" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-slate-800">
+                  Son Deneme: {lastExam.name}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                  {lastExam.topics?.length || lastExam.wrongTopics?.length || 0} Konu Kayıtlı
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Karneden taranan konu bazlı Doğru, Yanlış ve Boş karnesi hazır. İncelemek için tıklayın.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <span>{expandedId === lastExam.id ? "Analizi Kapat" : "Konu Analizini Aç"}</span>
+            {expandedId === lastExam.id ? <FiChevronUp /> : <FiChevronDown />}
+          </button>
+        </div>
+      )}
 
       {/* Filtre */}
       {filterOptions.length > 2 && (
@@ -229,7 +293,7 @@ export default function MockExamTab({
                   style={{ minWidth: 48 }}
                 >
                   <span className="text-xs font-bold text-blue-600">
-                    {t.net.toFixed(0)}
+                    {formatNet(t.net)}
                   </span>
                   <motion.div
                     initial={{ height: 0 }}
@@ -282,7 +346,7 @@ export default function MockExamTab({
                           Başarı: %{Math.round(c.avgSuccessRate)}
                         </span>
                         <span className="font-semibold text-blue-600">
-                          Net: {c.avgNet.toFixed(1)}
+                          Net: {formatNet(c.avgNet)}
                         </span>
                       </div>
                       <CourseProgressBar segments={c.progressSegments} />
@@ -321,10 +385,18 @@ export default function MockExamTab({
                             {getDenemeExamTypeLabel(exam.type)}
                           </span>
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-800 truncate">
-                              {exam.name}
-                            </p>
-                            <p className="text-xs text-slate-400">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-slate-800 truncate">
+                                {exam.name}
+                              </p>
+                              {((exam.topics && exam.topics.length > 0) ||
+                                (exam.wrongTopics && exam.wrongTopics.length > 0)) && (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
+                                  📊 {exam.topics?.length || exam.wrongTopics?.length} Konu Analizi
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
                               {formatDate(exam.date)}
                             </p>
                           </div>
@@ -332,7 +404,7 @@ export default function MockExamTab({
                         <div className="flex items-center gap-3 shrink-0 ml-2">
                           <div className="text-right">
                             <p className="text-lg font-bold text-blue-600">
-                              {totalNet.toFixed(1)}
+                              {formatNet(totalNet)}
                             </p>
                             <p className="text-xs text-slate-400">net</p>
                           </div>
@@ -383,16 +455,29 @@ export default function MockExamTab({
 
                         <div className="space-y-2">
                           {exam.courses.map((c) => {
-                            const def = denemeCoursesByType[exam.type].find(
+                            const def = denemeCoursesByType[exam.type]?.find(
                               (d) => d.key === c.courseKey,
-                            );
-                            if (!def) return null;
+                            ) || {
+                              key: c.courseKey,
+                              name:
+                                c.courseName ||
+                                c.courseKey.replace(/^[A-Z0-9]+-/, ""),
+                              maxQuestions:
+                                c.correct + c.wrong + c.empty > 0
+                                  ? c.correct + c.wrong + c.empty
+                                  : 20,
+                            };
+                            const displayName = c.courseName || def.name;
+                            const maxQ =
+                              def.maxQuestions ||
+                              c.correct + c.wrong + c.empty ||
+                              20;
                             const net = calculateCourseNet(c);
                             const segments = getProgressSegments(
                               c.correct,
                               c.wrong,
                               c.empty,
-                              def.maxQuestions,
+                              maxQ,
                             );
                             const hasData = hasAnsweredQuestions(
                               c.correct,
@@ -407,10 +492,10 @@ export default function MockExamTab({
                               >
                                 <div className="flex justify-between items-center gap-2">
                                   <p className="text-sm font-medium text-slate-700">
-                                    {def.name}
+                                    {displayName}
                                   </p>
                                   <span className="text-sm font-bold text-blue-600 shrink-0">
-                                    {hasData ? `${net.toFixed(1)} net` : "—"}
+                                    {hasData ? `${formatNet(net)} net` : "—"}
                                   </span>
                                 </div>
                                 <div className="flex gap-3 text-xs">
@@ -424,7 +509,7 @@ export default function MockExamTab({
                                     {c.empty} Boş
                                   </span>
                                   <span className="text-slate-400 ml-auto">
-                                    / {def.maxQuestions}
+                                    / {maxQ}
                                   </span>
                                 </div>
                                 {hasData ? (
@@ -436,6 +521,20 @@ export default function MockExamTab({
                             );
                           })}
                         </div>
+
+                        {/* Karnede Tespit Edilen Konu Analiz Verisi */}
+                        {((exam.topics && exam.topics.length > 0) ||
+                          (exam.wrongTopics && exam.wrongTopics.length > 0)) && (
+                          <ExamTopicAnalysis
+                            topics={
+                              exam.topics && exam.topics.length > 0
+                                ? exam.topics
+                                : exam.wrongTopics!
+                            }
+                            weeklySelectedTopics={weeklySelectedTopics}
+                            onAddTopicsToPlan={onAddTopicsToPlan}
+                          />
+                        )}
                       </div>
                     )}
                   </div>
@@ -445,6 +544,17 @@ export default function MockExamTab({
           </section>
         </>
       )}
+
+      <UploadMockExamModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSave={handleSaveFromUploadModal}
+        studentName={studentName}
+        grade={grade}
+        field={field}
+        weeklySelectedTopics={weeklySelectedTopics}
+        onAddTopicsToPlan={onAddTopicsToPlan}
+      />
 
       <AddMockExamModal
         isOpen={isModalOpen}
@@ -548,6 +658,270 @@ function MiniStat({
     <div className="bg-white rounded-lg p-2 border border-slate-100">
       <p className="text-xs text-slate-400">{label}</p>
       <p className={`text-lg font-bold ${colors[color]}`}>{value}</p>
+    </div>
+  );
+}
+
+function ExamTopicAnalysis({
+  topics,
+  weeklySelectedTopics,
+  onAddTopicsToPlan,
+}: {
+  topics: Array<{
+    courseKey?: string;
+    courseName?: string;
+    topicName: string;
+    questionCount?: number;
+    correctCount?: number;
+    wrongCount?: number;
+    emptyCount?: number;
+    matchedTopicId?: string;
+    matchedTopicTitle?: string;
+  }>;
+  weeklySelectedTopics?: string[];
+  onAddTopicsToPlan?: (topicIds: string[]) => void;
+}) {
+  const [filter, setFilter] = useState<"all" | "weak" | "correct">("all");
+  const [search, setSearch] = useState("");
+
+  const filtered = topics.filter((t) => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const match =
+        t.topicName.toLowerCase().includes(q) ||
+        (t.courseName && t.courseName.toLowerCase().includes(q)) ||
+        (t.courseKey && t.courseKey.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    const isWeak = (t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0;
+    const isFullCorrect =
+      (t.correctCount || 0) > 0 &&
+      (!t.wrongCount || t.wrongCount === 0) &&
+      (!t.emptyCount || t.emptyCount === 0);
+
+    if (filter === "weak") return isWeak;
+    if (filter === "correct") return isFullCorrect;
+    return true;
+  });
+
+  const weakCount = topics.filter(
+    (t) => (t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0,
+  ).length;
+  const fullCorrectCount = topics.filter(
+    (t) =>
+      (t.correctCount || 0) > 0 &&
+      (!t.wrongCount || t.wrongCount === 0) &&
+      (!t.emptyCount || t.emptyCount === 0),
+  ).length;
+
+  const missingWithMatch = topics.filter(
+    (t) =>
+      Boolean(t.matchedTopicId) &&
+      ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0),
+  );
+  const unplannedTopics = missingWithMatch.filter(
+    (t) => !weeklySelectedTopics?.includes(t.matchedTopicId!),
+  );
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-3 mt-3 shadow-2xs"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        <div>
+          <h5 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <FiList className="text-indigo-600" />
+            <span>Karne Konu Analizi ({topics.length} Konu Kayıtlı)</span>
+          </h5>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Sınavda taranan tüm konuların doğru, yanlış ve boş analizi
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+          {onAddTopicsToPlan && missingWithMatch.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const ids = unplannedTopics.map((t) => t.matchedTopicId!);
+                if (ids.length > 0) {
+                  onAddTopicsToPlan(ids);
+                  toast.success(`${ids.length} eksik konu haftalık plana eklendi!`);
+                }
+              }}
+              disabled={unplannedTopics.length === 0}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                unplannedTopics.length > 0
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 shadow-2xs cursor-pointer active:scale-95"
+                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-default opacity-70"
+              }`}
+              title={
+                unplannedTopics.length > 0
+                  ? "Öğrencinin bu denemedeki tüm eksik konularını haftalık plana ekler"
+                  : "Tüm eksik konular zaten haftalık planda"
+              }
+            >
+              <FiCalendar className="text-xs" />
+              <span>
+                {unplannedTopics.length > 0
+                  ? `Eksik Konuları Plana Ekle (${unplannedTopics.length})`
+                  : "Tüm Eksikler Planda"}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              filter === "all"
+                ? "bg-slate-800 text-white shadow-2xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Tümü ({topics.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("weak")}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              filter === "weak"
+                ? "bg-rose-600 text-white shadow-2xs"
+                : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+            }`}
+          >
+            Yanlış / Boş ({weakCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("correct")}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              filter === "correct"
+                ? "bg-emerald-600 text-white shadow-2xs"
+                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            }`}
+          >
+            Tam Doğru ({fullCorrectCount})
+          </button>
+        </div>
+      </div>
+
+      {topics.length > 6 && (
+        <div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Konu veya ders ara..."
+            className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+          />
+        </div>
+      )}
+
+      <div className="max-h-80 overflow-y-auto space-y-1 pr-1 divide-y divide-slate-100">
+        {filtered.length === 0 ? (
+          <div className="text-center py-6 text-xs text-slate-400">
+            Filtreye uygun konu bulunamadı.
+          </div>
+        ) : (
+          filtered.map((t, idx) => {
+            const cCount = t.correctCount || 0;
+            const wCount = t.wrongCount || 0;
+            const eCount = t.emptyCount || 0;
+            const qCount = t.questionCount || cCount + wCount + eCount;
+            const rate = qCount > 0 ? Math.round((cCount / qCount) * 100) : 0;
+            const isAlreadyInPlan = Boolean(
+              t.matchedTopicId && weeklySelectedTopics?.includes(t.matchedTopicId),
+            );
+
+            return (
+              <div
+                key={idx}
+                className="flex items-center justify-between pt-2 pb-1.5 text-xs hover:bg-slate-50/70 px-2 rounded-lg transition-colors"
+              >
+                <div className="min-w-0 pr-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                      {t.courseName || t.courseKey}
+                    </span>
+                    <span
+                      className="font-semibold text-slate-800 truncate"
+                      title={t.topicName}
+                    >
+                      {t.topicName}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                    {qCount} Soru:
+                  </span>
+                  {cCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {cCount} D
+                    </span>
+                  )}
+                  {wCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                      {wCount} Y
+                    </span>
+                  )}
+                  {eCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                      {eCount} B
+                    </span>
+                  )}
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      rate === 100
+                        ? "bg-emerald-100 text-emerald-800"
+                        : rate >= 50
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-rose-100 text-rose-800"
+                    }`}
+                  >
+                    %{rate}
+                  </span>
+
+                  {t.matchedTopicId && onAddTopicsToPlan && (
+                    <button
+                      type="button"
+                      disabled={isAlreadyInPlan}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddTopicsToPlan([t.matchedTopicId!]);
+                        toast.success(
+                          `${t.matchedTopicTitle || t.topicName} haftalık plana eklendi!`,
+                        );
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all ${
+                        isAlreadyInPlan
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
+                          : "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 active:scale-95 cursor-pointer"
+                      }`}
+                      title={
+                        isAlreadyInPlan
+                          ? "Bu konu zaten haftalık planda ekli"
+                          : "Bu konuyu haftalık plana ekle"
+                      }
+                    >
+                      {isAlreadyInPlan ? (
+                        <>
+                          <FiCheck className="text-[10px]" /> Planda
+                        </>
+                      ) : (
+                        <>
+                          <FiPlus className="text-[10px]" /> Plana Ekle
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

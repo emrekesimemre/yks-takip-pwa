@@ -8,9 +8,40 @@ const TopicProgressSchema = new Schema({
 const MockExamCourseResultSchema = new Schema(
   {
     courseKey: { type: String, required: true },
+    courseName: { type: String, default: "" },
     correct: { type: Number, default: 0 },
     wrong: { type: Number, default: 0 },
     empty: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const MockExamTopicResultSchema = new Schema(
+  {
+    courseKey: { type: String, default: "" },
+    courseName: { type: String, default: "" },
+    topicName: { type: String, required: true },
+    questionCount: { type: Number, default: 0 },
+    correctCount: { type: Number, default: 0 },
+    wrongCount: { type: Number, default: 0 },
+    emptyCount: { type: Number, default: 0 },
+    matchedTopicId: { type: String, default: "" },
+    matchedTopicTitle: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const MockExamWrongTopicSchema = new Schema(
+  {
+    courseKey: { type: String, default: "" },
+    courseName: { type: String, default: "" },
+    topicName: { type: String, required: true },
+    questionCount: { type: Number, default: 0 },
+    correctCount: { type: Number, default: 0 },
+    wrongCount: { type: Number, default: 0 },
+    emptyCount: { type: Number, default: 0 },
+    matchedTopicId: { type: String, default: "" },
+    matchedTopicTitle: { type: String, default: "" },
   },
   { _id: false },
 );
@@ -22,6 +53,8 @@ const MockExamSchema = new Schema(
     type: { type: String, required: true },
     date: { type: String, required: true },
     courses: [MockExamCourseResultSchema],
+    topics: { type: [MockExamTopicResultSchema], default: [] },
+    wrongTopics: { type: [MockExamWrongTopicSchema], default: [] },
   },
   { _id: false },
 );

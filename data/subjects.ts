@@ -656,20 +656,23 @@ export function getCurriculumForStudent(
     return { "9. Sınıf": grade9Curriculum };
   }
   if (g === "10") {
-    return { "10. Sınıf": grade10Curriculum };
+    return {
+      "10. Sınıf": grade10Curriculum,
+      "9. Sınıf (Tekrar)": grade9Curriculum,
+    };
   }
   if (g === "11") {
     const f = field || "sayisal";
     if (f === "esit-agirlik") {
-      return { "11. Sınıf": grade11EsitAgirlikCurriculum };
+      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11EsitAgirlikCurriculum };
     }
     if (f === "sozel") {
-      return { "11. Sınıf": grade11SozelCurriculum };
+      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11SozelCurriculum };
     }
     if (f === "dil") {
-      return { "11. Sınıf": grade11DilCurriculum };
+      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11DilCurriculum };
     }
-    return { "11. Sınıf": grade11SayisalCurriculum };
+    return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11SayisalCurriculum };
   }
 
   // 12 veya Mezun (YKS)
@@ -682,6 +685,7 @@ export function getCurriculumForStudent(
 export const allCurriculums: Record<string, Course> = {
   "9. Sınıf": grade9Curriculum,
   "9. Sınıf (Dil)": { ...grade9Curriculum, İngilizce: grade9EnglishTopics },
+  "9. Sınıf (Tekrar)": grade9Curriculum,
   "10. Sınıf": grade10Curriculum,
   "11. Sınıf (Sayısal)": grade11SayisalCurriculum,
   "11. Sınıf (Eşit Ağırlık)": grade11EsitAgirlikCurriculum,

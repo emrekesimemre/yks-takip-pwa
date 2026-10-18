@@ -253,7 +253,7 @@ export default function StudentDetailClient({
       const student = useStudentStore.getState().currentStudent;
       if (!student) return;
 
-      const current = student.weeklySelectedTopics ?? [];
+      const current = Array.from(new Set(student.weeklySelectedTopics ?? []));
       const updated = selected
         ? current.includes(topicId)
           ? current
@@ -264,6 +264,23 @@ export default function StudentDetailClient({
     },
     [persistUpdate],
   );
+
+  const handleAddTopicsToPlan = useCallback(
+    (topicIds: string[]) => {
+      const student = useStudentStore.getState().currentStudent;
+      if (!student) return;
+
+      const current = Array.from(new Set(student.weeklySelectedTopics ?? []));
+      const uniqueIncoming = Array.from(new Set(topicIds));
+      const newTopics = uniqueIncoming.filter((id) => !current.includes(id));
+      if (newTopics.length === 0) return;
+
+      const updated = [...current, ...newTopics];
+      void persistUpdate({ weeklySelectedTopics: updated });
+    },
+    [persistUpdate],
+  );
+
 
   const handleUpdateSolvedQuestions = useCallback(
     (exam: string, course: string, count: number) => {
@@ -432,7 +449,9 @@ export default function StudentDetailClient({
     currentStudent.grade,
     currentStudent.field,
   );
-  const weeklySelected = currentStudent.weeklySelectedTopics ?? [];
+  const weeklySelected = Array.from(
+    new Set(currentStudent.weeklySelectedTopics ?? []),
+  );
   const solvedQuestions = currentStudent.solvedQuestionsByCourse ?? {};
   const solvedQuestionsByTopic = currentStudent.solvedQuestionsByTopic ?? {};
   const weeklySolvedQuestions =
@@ -676,6 +695,8 @@ export default function StudentDetailClient({
                     grade={currentStudent.grade}
                     field={currentStudent.field}
                     mockExams={mockExams}
+                    weeklySelectedTopics={weeklySelected}
+                    onAddTopicsToPlan={handleAddTopicsToPlan}
                     onAddExam={handleAddMockExam}
                     onUpdateExam={handleUpdateMockExam}
                     onDeleteExam={handleDeleteMockExam}

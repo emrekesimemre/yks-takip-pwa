@@ -16,6 +16,7 @@ import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   formatDate,
+  formatNet,
   type ExamGroup,
   type ExamRankingEntry,
 } from "@/utils/deneme";
@@ -228,8 +229,8 @@ export default function AdminExamRankings({
     return {
       average:
         Math.round(
-          (nets.reduce((sum, net) => sum + net, 0) / nets.length) * 10,
-        ) / 10,
+          (nets.reduce((sum, net) => sum + net, 0) / nets.length) * 100,
+        ) / 100,
       highest: Math.max(...nets),
       lowest: Math.min(...nets),
     };
@@ -460,19 +461,19 @@ export default function AdminExamRankings({
             <div className="rounded-xl bg-white border border-slate-100 px-4 py-3">
               <p className="text-xs text-slate-500 font-medium">Ortalama Net</p>
               <p className="text-xl font-bold text-slate-900 mt-1">
-                {stats.average?.toFixed(1)}
+                {stats.average !== null ? formatNet(stats.average) : "—"}
               </p>
             </div>
             <div className="rounded-xl bg-white border border-slate-100 px-4 py-3">
               <p className="text-xs text-slate-500 font-medium">En Yüksek</p>
               <p className="text-xl font-bold text-emerald-600 mt-1">
-                {stats.highest?.toFixed(1)}
+                {stats.highest !== null ? formatNet(stats.highest) : "—"}
               </p>
             </div>
             <div className="rounded-xl bg-white border border-slate-100 px-4 py-3">
               <p className="text-xs text-slate-500 font-medium">En Düşük</p>
               <p className="text-xl font-bold text-slate-700 mt-1">
-                {stats.lowest?.toFixed(1)}
+                {stats.lowest !== null ? formatNet(stats.lowest) : "—"}
               </p>
             </div>
           </div>
@@ -538,7 +539,7 @@ export default function AdminExamRankings({
                       Kurum Ort.
                     </span>
                     <p className="text-base font-extrabold text-violet-700">
-                      {stats.average.toFixed(1)} net
+                      {stats.average !== null ? formatNet(stats.average) : "—"} net
                     </p>
                   </div>
                 </div>
@@ -605,7 +606,7 @@ export default function AdminExamRankings({
                               : "bg-slate-100 text-slate-700"
                         }`}
                       >
-                        {entry.net.toFixed(1)}
+                        {formatNet(entry.net)}
                       </span>
                     </td>
                   </motion.tr>

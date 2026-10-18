@@ -11,6 +11,7 @@ import {
   calculateCourseNet,
   calculateExamTotalNet,
   createEmptyCourseResults,
+  formatNet,
   mergeCourseResults,
 } from "@/utils/deneme";
 import AnimatedModal from "@/components/ui/AnimatedModal";
@@ -231,7 +232,7 @@ function MockExamForm({ exam, grade, field, onClose, onSave }: FormProps) {
                       <p
                         className={`text-sm font-bold leading-tight mt-0.5 ${total > 0 ? "text-blue-600" : "text-slate-300"}`}
                       >
-                        {total > 0 ? net.toFixed(1) : "—"}
+                        {total > 0 ? formatNet(net) : "—"}
                       </p>
                     </div>
                   </div>
@@ -278,7 +279,7 @@ function MockExamForm({ exam, grade, field, onClose, onSave }: FormProps) {
           <p className="text-sm text-slate-500">
             Toplam Net:{" "}
             <span className="font-bold text-blue-600 text-lg">
-              {previewNet.toFixed(1)}
+              {formatNet(previewNet)}
             </span>
           </p>
           <div className="flex gap-2 sm:shrink-0">
