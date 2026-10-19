@@ -4,6 +4,7 @@ import type { StaffRole } from "@/lib/staff";
 import type {
   CourseSolvedQuestions,
   MockExam,
+  SchoolExamEntry,
   TopicProgress,
 } from "@/store/useStudentStore";
 import {
@@ -122,6 +123,7 @@ export function developmentReportHtml(input: {
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   mockExams: MockExam[];
+  schoolGrades: SchoolExamEntry[];
   teacherEmail: string;
 }) {
   const reportDate = new Date().toLocaleDateString("tr-TR", {
@@ -139,6 +141,18 @@ export function developmentReportHtml(input: {
   const tytExams = input.mockExams.filter((exam) => exam.type === "TYT");
   const aytExams = input.mockExams.filter((exam) => exam.type === "AYT");
   const weakest = getWeakestCourses(analyzeByCourse(input.mockExams));
+  const schoolGradeRows = input.schoolGrades
+    .slice()
+    .sort((a, b) => a.subject.localeCompare(b.subject, "tr") || a.term - b.term || a.examIndex - b.examIndex)
+    .map(
+      (entry) => `<tr>
+        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">${escapeHtml(entry.subject)}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:center;">${entry.term}. dönem</td>
+        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:center;">${entry.examIndex}. yazılı</td>
+        <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">${entry.score}</td>
+      </tr>`,
+    )
+    .join("");
 
   const courseRows = (["TYT", "AYT"] as const)
     .flatMap((exam) =>
@@ -200,6 +214,12 @@ export function developmentReportHtml(input: {
     <p style="margin:0 0 6px;">TYT: ${tytExams.length} deneme, ortalama ${formatNet(avgNet(tytExams))} net, son ${formatNet(lastNet(tytExams))} net</p>
     <p style="margin:0 0 12px;">AYT: ${aytExams.length} deneme, ortalama ${formatNet(avgNet(aytExams))} net, son ${formatNet(lastNet(aytExams))} net</p>
     <p style="margin:0 0 20px;">En zayıf dersler: ${escapeHtml(weakestText)}</p>
+    <h2 style="margin:0 0 8px;font-size:16px;">Okul notları</h2>
+    ${
+      schoolGradeRows
+        ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">${schoolGradeRows}</table>`
+        : `<p style="margin:0 0 20px;color:#64748b;">Henüz okul notu girilmemiş.</p>`
+    }
     <p style="margin:0;font-size:13px;color:#64748b;">Bu rapor ${escapeHtml(input.teacherEmail)} tarafından gönderildi.</p>
   `);
 }

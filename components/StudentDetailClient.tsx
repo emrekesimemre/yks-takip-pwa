@@ -8,6 +8,7 @@ import {
   type CourseSolvedQuestions,
   type TopicProgress,
   type MockExam,
+  type SchoolExamEntry,
 } from "@/store/useStudentStore";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import WeeklyPlanTab from "@/components/WeeklyPlanTab";
 import WeeklyPlanPrintView from "@/components/WeeklyPlanPrintView";
 import DevelopmentReportModal from "@/components/DevelopmentReportModal";
 import MockExamTab from "@/components/MockExamTab";
+import SchoolGradesTab from "@/components/SchoolGradesTab";
 import ConfirmModal from "@/components/ConfirmModal";
 import AddStudentModal from "@/components/AddStudentModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -33,7 +35,7 @@ import {
   FiFileText,
 } from "react-icons/fi";
 
-type MainTab = "progress" | "weekly" | "exams";
+type MainTab = "progress" | "weekly" | "exams" | "school";
 
 type PersistPayload = {
   topics?: TopicProgress[];
@@ -43,6 +45,7 @@ type PersistPayload = {
   weeklySolvedQuestionsByCourse?: CourseSolvedQuestions;
   weeklySolvedQuestionsByTopic?: CourseSolvedQuestions;
   mockExams?: MockExam[];
+  schoolGrades?: SchoolExamEntry[];
 };
 
 function mergePersistedFields(
@@ -81,6 +84,9 @@ function mergePersistedFields(
   if (updates.mockExams !== undefined) {
     merged.mockExams = data.mockExams ?? updates.mockExams;
   }
+  if (updates.schoolGrades !== undefined) {
+    merged.schoolGrades = data.schoolGrades ?? updates.schoolGrades;
+  }
   return merged;
 }
 
@@ -88,6 +94,7 @@ const tabs: { id: MainTab; label: string; icon: typeof FiBook }[] = [
   { id: "progress", label: "Genel İlerleme", icon: FiBook },
   { id: "weekly", label: "Haftalık Plan", icon: FiCalendar },
   { id: "exams", label: "Deneme Analizi", icon: FiBarChart2 },
+  { id: "school", label: "Okul Notları", icon: FiBook },
 ];
 
 export default function StudentDetailClient({
@@ -155,6 +162,7 @@ export default function StudentDetailClient({
             data.weeklySolvedQuestionsByTopic,
           ),
           mockExams: data.mockExams ?? [],
+          schoolGrades: data.schoolGrades ?? [],
         });
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -204,7 +212,8 @@ export default function StudentDetailClient({
               error?: string;
             } | null;
             toast.error(
-              body?.error || "Değişiklikler kaydedilemedi. Lütfen tekrar deneyin.",
+              body?.error ||
+                "Değişiklikler kaydedilemedi. Lütfen tekrar deneyin.",
             );
           }
           return false;
@@ -265,6 +274,13 @@ export default function StudentDetailClient({
     [persistUpdate],
   );
 
+  const handleSaveSchoolGrades = useCallback(
+    (grades: SchoolExamEntry[]) => {
+      void persistUpdate({ schoolGrades: grades });
+    },
+    [persistUpdate],
+  );
+
   const handleAddTopicsToPlan = useCallback(
     (topicIds: string[]) => {
       const student = useStudentStore.getState().currentStudent;
@@ -280,7 +296,6 @@ export default function StudentDetailClient({
     },
     [persistUpdate],
   );
-
 
   const handleUpdateSolvedQuestions = useCallback(
     (exam: string, course: string, count: number) => {
@@ -637,7 +652,11 @@ export default function StudentDetailClient({
                     ? "İlerleme"
                     : id === "weekly"
                       ? "Plan"
-                      : "Deneme"}
+                      : id === "exams"
+                        ? "Deneme"
+                        : id === "school"
+                          ? "Okul"
+                          : "Diğer"}
                 </span>
                 {activeTab === id && (
                   <motion.div
@@ -668,7 +687,9 @@ export default function StudentDetailClient({
                     solvedQuestionsByTopic={solvedQuestionsByTopic}
                     onToggleCompletion={handleToggleCompletion}
                     onUpdateSolvedQuestions={handleUpdateSolvedQuestions}
-                    onUpdateTopicSolvedQuestions={handleUpdateTopicSolvedQuestions}
+                    onUpdateTopicSolvedQuestions={
+                      handleUpdateTopicSolvedQuestions
+                    }
                   />
                 ) : activeTab === "weekly" ? (
                   <WeeklyPlanTab
@@ -687,6 +708,12 @@ export default function StudentDetailClient({
                     }
                     onPrint={handleWeeklyPrint}
                     onResetWeeklyPlan={() => setShowResetConfirm(true)}
+                  />
+                ) : activeTab === "school" ? (
+                  <SchoolGradesTab
+                    grade={currentStudent.grade}
+                    schoolGrades={currentStudent.schoolGrades}
+                    onSave={handleSaveSchoolGrades}
                   />
                 ) : (
                   <MockExamTab
@@ -730,6 +757,7 @@ export default function StudentDetailClient({
         solvedQuestionsByCourse={solvedQuestions}
         solvedQuestionsByTopic={solvedQuestionsByTopic}
         mockExams={mockExams}
+        schoolGrades={currentStudent.schoolGrades}
         onParentEmailSaved={(savedParentEmail) => {
           updateCurrentStudent({ parentEmail: savedParentEmail });
         }}

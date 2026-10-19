@@ -59,6 +59,15 @@ export type MockExam = {
   wrongTopics?: MockExamWrongTopic[];
 };
 
+// Okul yazılı notu
+export type SchoolExamEntry = {
+  id: string;            // ör. "term1-mat-2"
+  subject: string;       // ör. "Matematik"
+  term: 1 | 2;           // 1. veya 2. Dönem
+  examIndex: 1 | 2 | 3;  // Kaçıncı yazılı
+  score: number;         // 0-100
+};
+
 export type Student = {
   _id?: string;
   name: string;
@@ -77,6 +86,7 @@ export type Student = {
   weeklySolvedQuestionsByCourse: CourseSolvedQuestions;
   weeklySolvedQuestionsByTopic: TopicSolvedQuestions;
   mockExams: MockExam[];
+  schoolGrades: SchoolExamEntry[];
 };
 
 type StudentStore = {

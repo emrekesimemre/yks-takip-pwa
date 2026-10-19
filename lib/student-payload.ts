@@ -43,6 +43,14 @@ const mockExamWrongTopicSchema = z.object({
   matchedTopicTitle: z.string().max(200).optional(),
 });
 
+const schoolExamEntrySchema = z.object({
+  id: z.string().min(1).max(80),
+  subject: z.string().min(1).max(80),
+  term: z.union([z.literal(1), z.literal(2)]),
+  examIndex: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  score: z.number().min(0).max(100),
+});
+
 const mockExamSchema = z.object({
   id: z.string().min(1).max(80),
   name: z.string().trim().min(1).max(120),
@@ -71,6 +79,7 @@ export const patchStudentSchema = z.object({
   weeklySolvedQuestionsByCourse: solvedMapSchema.optional(),
   weeklySolvedQuestionsByTopic: solvedMapSchema.optional(),
   mockExams: z.array(mockExamSchema).max(200).optional(),
+  schoolGrades: z.array(schoolExamEntrySchema).max(300).optional(),
   name: z.string().trim().min(1, "Öğrenci adı boş olamaz.").max(80).optional(),
   grade: z.enum(["9", "10", "11", "12", "mezun"]).optional(),
   field: z.enum(["sayisal", "esit-agirlik", "sozel", "dil", "genel", ""]).optional(),
@@ -126,6 +135,7 @@ export function studentPatchToUpdate(body: StudentPatchInput) {
     );
   }
   if (body.mockExams !== undefined) updateFields.mockExams = body.mockExams;
+  if (body.schoolGrades !== undefined) updateFields.schoolGrades = body.schoolGrades;
   if (body.name !== undefined) updateFields.name = body.name;
   if (body.grade !== undefined) updateFields.grade = body.grade;
   if (body.field !== undefined) updateFields.field = body.field;

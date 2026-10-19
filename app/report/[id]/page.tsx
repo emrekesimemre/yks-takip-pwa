@@ -59,6 +59,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
   const solvedQuestionsByTopic = (studentObj.solvedQuestionsByTopic ??
     {}) as Record<string, number>;
   const mockExams = studentObj.mockExams ?? [];
+  const schoolGrades = studentObj.schoolGrades ?? [];
 
   return (
     <div className="min-h-screen bg-slate-100/70 print:bg-white text-slate-800">
@@ -79,6 +80,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
             solvedQuestionsByCourse={solvedQuestionsByCourse}
             solvedQuestionsByTopic={solvedQuestionsByTopic}
             mockExams={mockExams}
+            schoolGrades={schoolGrades}
           />
         </div>
 

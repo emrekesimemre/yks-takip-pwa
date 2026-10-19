@@ -59,6 +59,17 @@ const MockExamSchema = new Schema(
   { _id: false },
 );
 
+const SchoolExamEntrySchema = new Schema(
+  {
+    id: { type: String, required: true },
+    subject: { type: String, required: true },
+    term: { type: Number, enum: [1, 2], required: true },
+    examIndex: { type: Number, enum: [1, 2, 3], required: true },
+    score: { type: Number, min: 0, max: 100, required: true },
+  },
+  { _id: false },
+);
+
 const StudentSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
@@ -95,6 +106,7 @@ const StudentSchema = new Schema(
     weeklySolvedQuestionsByCourse: { type: Map, of: Number, default: {} },
     weeklySolvedQuestionsByTopic: { type: Map, of: Number, default: {} },
     mockExams: { type: [MockExamSchema], default: [] },
+    schoolGrades: { type: [SchoolExamEntrySchema], default: [] },
   },
   { timestamps: true },
 );

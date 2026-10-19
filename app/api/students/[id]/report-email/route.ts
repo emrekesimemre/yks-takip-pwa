@@ -3,7 +3,11 @@ import { developmentReportHtml, developmentReportSubject } from "@/lib/emails";
 import { sendMail } from "@/lib/mail";
 import connectMongo from "@/lib/mongo";
 import Student from "@/models/Student";
-import type { MockExam, TopicProgress } from "@/store/useStudentStore";
+import type {
+  MockExam,
+  SchoolExamEntry,
+  TopicProgress,
+} from "@/store/useStudentStore";
 import { normalizeSolvedQuestions, normalizeTopics } from "@/utils/student";
 import {
   clientIp,
@@ -50,6 +54,7 @@ export async function POST(
       solvedQuestionsByCourse: Record<string, number>;
       solvedQuestionsByTopic: Record<string, number>;
       mockExams: MockExam[];
+      schoolGrades: SchoolExamEntry[];
     };
 
     const parentEmail = (data.parentEmail ?? "").trim().toLowerCase();
@@ -71,6 +76,7 @@ export async function POST(
           data.solvedQuestionsByTopic,
         ),
         mockExams: Array.isArray(data.mockExams) ? data.mockExams : [],
+        schoolGrades: Array.isArray(data.schoolGrades) ? data.schoolGrades : [],
         teacherEmail: auth.email,
       }),
       replyTo: auth.email,

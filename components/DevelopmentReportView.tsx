@@ -5,6 +5,7 @@ import { getDenemeCourseDef } from "@/data/denemeCourses";
 import type {
   CourseSolvedQuestions,
   MockExam,
+  SchoolExamEntry,
   TopicProgress,
 } from "@/store/useStudentStore";
 import {
@@ -51,6 +52,7 @@ type Props = {
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   mockExams?: MockExam[];
+  schoolGrades?: SchoolExamEntry[];
 };
 
 function CompletionPie({
@@ -181,6 +183,7 @@ export default function DevelopmentReportView({
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
   mockExams = [],
+  schoolGrades = [],
 }: Props) {
   const overallProgress = getOverallProgress(topics, grade, field);
   const studentCurriculum = getCurriculumForStudent(grade, field);
@@ -303,6 +306,58 @@ export default function DevelopmentReportView({
           </p>
         )}
       </div>
+
+      {schoolGrades.length > 0 && (
+        <div className="mt-8">
+          <div className="border-b border-slate-200 pb-3 mb-5">
+            <h2 className="text-base font-bold text-slate-800">Okul Notları</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Yazılı notları ve dönem ortalamaları
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-left">
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-600">Ders</th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">Dönem</th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">Yazılılar</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">Ortalama</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from(
+                  new Set(schoolGrades.map((entry) => `${entry.subject}-${entry.term}`)),
+                ).map((key, index) => {
+                  const [subject, termValue] = key.split(/-(?=[^-]+$)/);
+                  const term = Number(termValue);
+                  const entries = schoolGrades.filter(
+                    (entry) => entry.subject === subject && entry.term === term,
+                  );
+                  const average = Math.round(
+                    entries.reduce((sum, entry) => sum + entry.score, 0) / entries.length,
+                  );
+                  const sortedEntries = [...entries].sort(
+                    (a, b) => a.examIndex - b.examIndex,
+                  );
+                  return (
+                    <tr key={key} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                      <td className="px-3 py-2 font-medium text-slate-800">{subject}</td>
+                      <td className="px-3 py-2 text-center text-slate-600">{term}. Dönem</td>
+                      <td className="px-3 py-2 text-center text-slate-600">
+                        {sortedEntries
+                          .map((entry) => `${entry.examIndex}. yazılı: ${entry.score}`)
+                          .join(" · ")}
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-indigo-600">{average}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Deneme analizi bölümü */}
       {mockExams.length > 0 && (

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type {
   CourseSolvedQuestions,
   MockExam,
+  SchoolExamEntry,
   TopicProgress,
 } from "@/store/useStudentStore";
 import DevelopmentReportView from "@/components/DevelopmentReportView";
@@ -35,6 +36,7 @@ type Props = {
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
   mockExams?: MockExam[];
+  schoolGrades?: SchoolExamEntry[];
   onParentEmailSaved?: (parentEmail: string) => void;
   onReportTokenSaved?: (reportToken: string) => void;
 };
@@ -78,6 +80,7 @@ function DevelopmentReportBody({
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
   mockExams = [],
+  schoolGrades = [],
   onParentEmailSaved,
   onReportTokenSaved,
 }: Readonly<Props>) {
@@ -400,6 +403,7 @@ function DevelopmentReportBody({
             solvedQuestionsByCourse={solvedQuestionsByCourse}
             solvedQuestionsByTopic={solvedQuestionsByTopic}
             mockExams={mockExams}
+            schoolGrades={schoolGrades}
           />
         </div>
       </motion.div>
