@@ -1,11 +1,12 @@
+import AuthProvider from "@/components/AuthProvider";
+import OfflineBanner from "@/components/OfflineBanner";
+import PullToRefresh from "@/components/PullToRefresh";
+import { getPublicSiteUrl } from "@/lib/nextauth-url";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
-import AuthProvider from "@/components/AuthProvider";
-import PullToRefresh from "@/components/PullToRefresh";
 import { Toaster } from "sonner";
-import { getPublicSiteUrl } from "@/lib/nextauth-url";
+import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -75,6 +76,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <PullToRefresh />
+        <OfflineBanner />
         <AuthProvider>{children}</AuthProvider>
         <Toaster
           position="top-right"
