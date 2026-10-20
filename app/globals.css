@@ -267,8 +267,10 @@ textarea:disabled,
 }
 
 @media print {
-  body {
-    background: white;
+  body, .app-bg {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
     color: black;
   }
 
