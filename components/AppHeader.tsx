@@ -23,7 +23,7 @@ export default function AppHeader({ userName, isAdmin, isTeacher }: Props) {
           <BrandIconMark size={44} className="shrink-0" />
           <div className="hidden sm:block">
             <div className="font-bold text-lg text-slate-900 tracking-tight leading-none">
-              YKS Takip
+              MentorApp
             </div>
             <div className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">
               Öğrenci Yönetimi

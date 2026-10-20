@@ -33,7 +33,11 @@ function escapeHtml(value: string) {
 }
 
 function sanitizeSubject(value: string) {
-  return value.replace(/[\r\n\0]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+  return value
+    .replace(/[\r\n\0]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
 }
 
 function formatRoles(roles: StaffRole[]) {
@@ -68,15 +72,15 @@ export function staffInviteHtml(input: {
     : "";
   const heading =
     input.kind === "invite"
-      ? "YKS Takip paneline eklendiniz"
-      : "YKS Takip yetkiniz güncellendi";
+      ? "MentorApp paneline eklendiniz"
+      : "MentorApp yetkiniz güncellendi";
   const intro =
     input.kind === "invite"
       ? `Panele ${roles} yetkisiyle eklendiniz.`
       : `Yetkiniz ${roles} olarak güncellendi.`;
 
   return emailShell(`
-    <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#4f46e5;">YKS Takip</p>
+    <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#4f46e5;">MentorApp</p>
     <h1 style="margin:0 0 16px;font-size:22px;">${heading}</h1>
     ${greeting}
     <p style="margin:0 0 12px;line-height:1.5;">${intro}</p>
@@ -100,7 +104,10 @@ export function staffInviteHtml(input: {
 
 function avgNet(exams: MockExam[]) {
   if (exams.length === 0) return null;
-  const sum = exams.reduce((total, exam) => total + calculateExamTotalNet(exam), 0);
+  const sum = exams.reduce(
+    (total, exam) => total + calculateExamTotalNet(exam),
+    0,
+  );
   return Math.round((sum / exams.length) * 10) / 10;
 }
 
@@ -143,7 +150,12 @@ export function developmentReportHtml(input: {
   const weakest = getWeakestCourses(analyzeByCourse(input.mockExams));
   const schoolGradeRows = input.schoolGrades
     .slice()
-    .sort((a, b) => a.subject.localeCompare(b.subject, "tr") || a.term - b.term || a.examIndex - b.examIndex)
+    .sort(
+      (a, b) =>
+        a.subject.localeCompare(b.subject, "tr") ||
+        a.term - b.term ||
+        a.examIndex - b.examIndex,
+    )
     .map(
       (entry) => `<tr>
         <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">${escapeHtml(entry.subject)}</td>
@@ -175,7 +187,9 @@ export function developmentReportHtml(input: {
   const weakestText =
     weakest.length === 0
       ? "Deneme kaydı yok."
-      : weakest.map((course) => `${course.courseName} (${course.avgNet} net)`).join(", ");
+      : weakest
+          .map((course) => `${course.courseName} (${course.avgNet} net)`)
+          .join(", ");
 
   return emailShell(`
     <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#4f46e5;">Veli Gelişim Raporu</p>
@@ -226,8 +240,8 @@ export function developmentReportHtml(input: {
 
 export function staffInviteSubject(kind: "invite" | "update") {
   return kind === "invite"
-    ? "YKS Takip paneline eklendiniz"
-    : "YKS Takip yetkiniz güncellendi";
+    ? "MentorApp paneline eklendiniz"
+    : "MentorApp yetkiniz güncellendi";
 }
 
 export function developmentReportSubject(studentName: string) {

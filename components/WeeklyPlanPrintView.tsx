@@ -37,17 +37,26 @@ export default function WeeklyPlanPrintView({
     return acc;
   }, {});
 
-  const totalQuestions = Object.entries(grouped).reduce((sum, [key, topics]) => {
-    const [exam, course] = key.split("__");
-    const courseTotal = getCourseSolvedCount(
-      weeklySolvedQuestionsByCourse,
-      exam,
-      course,
-      weeklySolvedQuestionsByTopic,
-    );
-    if (courseTotal > 0) return sum + courseTotal;
-    return sum + topics.reduce((s, t) => s + getTopicSolvedCount(weeklySolvedQuestionsByTopic, t.id), 0);
-  }, 0);
+  const totalQuestions = Object.entries(grouped).reduce(
+    (sum, [key, topics]) => {
+      const [exam, course] = key.split("__");
+      const courseTotal = getCourseSolvedCount(
+        weeklySolvedQuestionsByCourse,
+        exam,
+        course,
+        weeklySolvedQuestionsByTopic,
+      );
+      if (courseTotal > 0) return sum + courseTotal;
+      return (
+        sum +
+        topics.reduce(
+          (s, t) => s + getTopicSolvedCount(weeklySolvedQuestionsByTopic, t.id),
+          0,
+        )
+      );
+    },
+    0,
+  );
 
   return (
     <div className={printVisible ? "hidden print:block" : "hidden"}>
@@ -112,7 +121,9 @@ export default function WeeklyPlanPrintView({
                           className="flex items-center gap-3"
                         >
                           <span className="inline-block w-4 h-4 border-2 border-black shrink-0" />
-                          <span className="text-black flex-1">{topic.title}</span>
+                          <span className="text-black flex-1">
+                            {topic.title}
+                          </span>
                           {topicCount > 0 && (
                             <span className="text-sm text-gray-600 shrink-0">
                               {topicCount} soru
@@ -129,7 +140,7 @@ export default function WeeklyPlanPrintView({
         )}
 
         <p className="text-xs text-gray-400 mt-10 pt-4 border-t border-gray-200">
-          YKS Takip Çizelgesi
+          MentorApp — Haftalık Çalışma Programı
         </p>
       </div>
     </div>

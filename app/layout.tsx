@@ -13,10 +13,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const APP_NAME = "YKS Takip";
-const APP_TITLE = "YKS Takip Çizelgesi";
+const APP_NAME = "MentorApp";
+const APP_TITLE = "MentorApp — Akademik Takip Sistemi";
 const APP_DESCRIPTION =
-  "Üniversite hazırlık öğrencileri için haftalık takip sistemi";
+  "Lise ve üniversite hazırlık öğrencileri için haftalık ders ve gelişim takip sistemi";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getPublicSiteUrl()),

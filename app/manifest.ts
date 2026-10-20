@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "YKS Takip Çizelgesi",
-    short_name: "YKS Takip",
+    name: "MentorApp — Akademik Takip Çizelgesi",
+    short_name: "MentorApp",
     description:
-      "Üniversite hazırlık öğrencileri için haftalık takip ve deneme analizi",
+      "Lise ve üniversite hazırlık öğrencileri için haftalık ders, deneme ve gelişim takip sistemi",
     start_url: "/",
     scope: "/",
     display: "standalone",

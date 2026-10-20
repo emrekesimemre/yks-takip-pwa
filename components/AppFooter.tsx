@@ -17,7 +17,7 @@ export default function AppFooter({ variant = "light" }: Props) {
         <p
           className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
         >
-          © 2026 YKS Takip
+          © 2026 MentorApp
         </p>
         <p
           className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}

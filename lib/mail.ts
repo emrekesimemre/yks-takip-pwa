@@ -59,7 +59,7 @@ export async function sendMail(input: {
     const mailer = getTransporter(user, pass);
     await Promise.race([
       mailer.sendMail({
-        from: `"YKS Takip" <${user}>`,
+        from: `"MentorApp" <${user}>`,
         to: input.to,
         subject: input.subject,
         html: input.html,

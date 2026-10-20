@@ -85,7 +85,8 @@ export default async function ReportPage({ params, searchParams }: Props) {
         </div>
 
         <footer className="mt-8 text-center text-xs text-slate-400 print:hidden pb-10">
-          Bu gelişim raporu YKS Takip sistemi üzerinden danışman öğretmen tarafından veli bilgilendirmesi amacıyla oluşturulmuştur.
+          Bu gelişim raporu MentorApp sistemi üzerinden danışman öğretmen
+          tarafından veli bilgilendirmesi amacıyla oluşturulmuştur.
         </footer>
       </main>
     </div>
@@ -103,7 +104,9 @@ function InvalidReportLink() {
           Rapor Bağlantısı Geçersiz
         </h1>
         <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-          Bu gelişim raporu bağlantısı geçersiz veya süresi dolmuş olabilir. Güncel gelişim raporuna ulaşmak için lütfen öğrencinin danışman öğretmeni ile iletişime geçin.
+          Bu gelişim raporu bağlantısı geçersiz veya süresi dolmuş olabilir.
+          Güncel gelişim raporuna ulaşmak için lütfen öğrencinin danışman
+          öğretmeni ile iletişime geçin.
         </p>
       </div>
     </div>

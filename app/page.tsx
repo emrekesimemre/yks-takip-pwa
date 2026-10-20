@@ -53,11 +53,11 @@ export default async function Home() {
               <BrandIconMark size={64} />
             </div>
             <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
-              YKS Takip
+              MentorApp
             </h1>
             <p className="text-slate-400 text-lg leading-relaxed max-w-sm mx-auto">
-              Öğrencilerinizin haftalık programını ve deneme netlerini profesyonelce
-              yönetin.
+              Öğrencilerinizin haftalık programını ve deneme netlerini
+              profesyonelce yönetin.
             </p>
           </div>
 
@@ -71,7 +71,9 @@ export default async function Home() {
                   <div className="w-9 h-9 mx-auto mb-2 rounded-lg bg-blue-50 flex items-center justify-center">
                     <Icon className="text-blue-600 text-lg" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-800">{title}</p>
+                  <p className="text-xs font-semibold text-slate-800">
+                    {title}
+                  </p>
                   <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
                     {desc}
                   </p>

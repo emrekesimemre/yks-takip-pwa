@@ -15,14 +15,11 @@ export default function AdminHeader({ userName, isAdmin, isTeacher }: Props) {
   return (
     <header className="glass-header sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 min-w-0">
-        <Link
-          href="/admin"
-          className="flex items-center gap-2.5 shrink-0"
-        >
+        <Link href="/admin" className="flex items-center gap-2.5 shrink-0">
           <BrandIconMark size={44} className="shrink-0" />
           <div className="hidden sm:block">
             <div className="font-bold text-lg text-slate-900 tracking-tight leading-none">
-              YKS Takip
+              MentorApp
             </div>
             <div className="text-[10px] text-violet-500 font-medium tracking-wide uppercase">
               Yönetici Paneli

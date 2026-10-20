@@ -118,11 +118,13 @@ function CourseBarChart({
   grade?: string;
   field?: string;
 }) {
-  const data = getCourseProgressList(exam, topics, grade, field).map((item) => ({
-    name: item.course,
-    percentage: item.percentage,
-    label: `%${item.percentage}`,
-  }));
+  const data = getCourseProgressList(exam, topics, grade, field).map(
+    (item) => ({
+      name: item.course,
+      percentage: item.percentage,
+      label: `%${item.percentage}`,
+    }),
+  );
 
   return (
     <div>
@@ -319,15 +321,27 @@ export default function DevelopmentReportView({
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-slate-100 text-left">
-                  <th className="px-3 py-2 text-xs font-semibold text-slate-600">Ders</th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">Dönem</th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">Yazılılar</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">Ortalama</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-600">
+                    Ders
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">
+                    Dönem
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">
+                    Yazılılar
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">
+                    Ortalama
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {Array.from(
-                  new Set(schoolGrades.map((entry) => `${entry.subject}-${entry.term}`)),
+                  new Set(
+                    schoolGrades.map(
+                      (entry) => `${entry.subject}-${entry.term}`,
+                    ),
+                  ),
                 ).map((key, index) => {
                   const [subject, termValue] = key.split(/-(?=[^-]+$)/);
                   const term = Number(termValue);
@@ -335,21 +349,34 @@ export default function DevelopmentReportView({
                     (entry) => entry.subject === subject && entry.term === term,
                   );
                   const average = Math.round(
-                    entries.reduce((sum, entry) => sum + entry.score, 0) / entries.length,
+                    entries.reduce((sum, entry) => sum + entry.score, 0) /
+                      entries.length,
                   );
                   const sortedEntries = [...entries].sort(
                     (a, b) => a.examIndex - b.examIndex,
                   );
                   return (
-                    <tr key={key} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                      <td className="px-3 py-2 font-medium text-slate-800">{subject}</td>
-                      <td className="px-3 py-2 text-center text-slate-600">{term}. Dönem</td>
+                    <tr
+                      key={key}
+                      className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                    >
+                      <td className="px-3 py-2 font-medium text-slate-800">
+                        {subject}
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-600">
+                        {term}. Dönem
+                      </td>
                       <td className="px-3 py-2 text-center text-slate-600">
                         {sortedEntries
-                          .map((entry) => `${entry.examIndex}. yazılı: ${entry.score}`)
+                          .map(
+                            (entry) =>
+                              `${entry.examIndex}. yazılı: ${entry.score}`,
+                          )
                           .join(" · ")}
                       </td>
-                      <td className="px-3 py-2 text-right font-bold text-indigo-600">{average}</td>
+                      <td className="px-3 py-2 text-right font-bold text-indigo-600">
+                        {average}
+                      </td>
                     </tr>
                   );
                 })}
@@ -377,20 +404,26 @@ export default function DevelopmentReportView({
               { label: "TYT Deneme Sayısı", value: tytExams.length || "—" },
               {
                 label: "TYT Ort. Net",
-                value: avgNet(tytExams) != null ? formatNet(avgNet(tytExams)!) : "—",
+                value:
+                  avgNet(tytExams) != null ? formatNet(avgNet(tytExams)!) : "—",
               },
               { label: "AYT Deneme Sayısı", value: aytExams.length || "—" },
               {
                 label: "AYT Ort. Net",
-                value: avgNet(aytExams) != null ? formatNet(avgNet(aytExams)!) : "—",
+                value:
+                  avgNet(aytExams) != null ? formatNet(avgNet(aytExams)!) : "—",
               },
             ].map((s) => (
               <div
                 key={s.label}
                 className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-center"
               >
-                <p className="text-[10px] text-slate-500 font-medium">{s.label}</p>
-                <p className="text-xl font-bold text-slate-800 mt-0.5">{String(s.value)}</p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {s.label}
+                </p>
+                <p className="text-xl font-bold text-slate-800 mt-0.5">
+                  {String(s.value)}
+                </p>
               </div>
             ))}
           </div>
@@ -446,7 +479,8 @@ export default function DevelopmentReportView({
                       const net = calculateCourseNet(c);
                       const courseName =
                         c.courseName ||
-                        getDenemeCourseDef(latestExam.type, c.courseKey)?.name ||
+                        getDenemeCourseDef(latestExam.type, c.courseKey)
+                          ?.name ||
                         c.courseKey;
                       return (
                         <tr
@@ -482,14 +516,22 @@ export default function DevelopmentReportView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
               {lastNet(tytExams) != null && (
                 <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-blue-800">Son TYT Denemesi</p>
-                  <p className="text-2xl font-bold text-blue-700">{formatNet(lastNet(tytExams)!)} net</p>
+                  <p className="text-sm font-semibold text-blue-800">
+                    Son TYT Denemesi
+                  </p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {formatNet(lastNet(tytExams)!)} net
+                  </p>
                 </div>
               )}
               {lastNet(aytExams) != null && (
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-indigo-800">Son AYT Denemesi</p>
-                  <p className="text-2xl font-bold text-indigo-700">{formatNet(lastNet(aytExams)!)} net</p>
+                  <p className="text-sm font-semibold text-indigo-800">
+                    Son AYT Denemesi
+                  </p>
+                  <p className="text-2xl font-bold text-indigo-700">
+                    {formatNet(lastNet(aytExams)!)} net
+                  </p>
                 </div>
               )}
             </div>
@@ -498,14 +540,22 @@ export default function DevelopmentReportView({
           {/* TYT Net Trendi */}
           {tytTrend.length >= 2 && (
             <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">TYT Net Gelişimi</h3>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">
+                TYT Net Gelişimi
+              </h3>
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={tytTrend} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <LineChart
+                  data={tytTrend}
+                  margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) =>
-                      new Date(d).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
+                      new Date(d).toLocaleDateString("tr-TR", {
+                        day: "numeric",
+                        month: "short",
+                      })
                     }
                     tick={{ fontSize: 10, fill: "#94a3b8" }}
                   />
@@ -529,14 +579,22 @@ export default function DevelopmentReportView({
           {/* AYT Net Trendi */}
           {aytTrend.length >= 2 && (
             <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">AYT Net Gelişimi</h3>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">
+                AYT Net Gelişimi
+              </h3>
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={aytTrend} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <LineChart
+                  data={aytTrend}
+                  margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) =>
-                      new Date(d).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
+                      new Date(d).toLocaleDateString("tr-TR", {
+                        day: "numeric",
+                        month: "short",
+                      })
                     }
                     tick={{ fontSize: 10, fill: "#94a3b8" }}
                   />
@@ -560,8 +618,13 @@ export default function DevelopmentReportView({
           {/* Ders bazlı performans */}
           {courseAnalysis.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">Ders Bazlı Ortalama Net</h3>
-              <ResponsiveContainer width="100%" height={Math.max(180, courseAnalysis.length * 32)}>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">
+                Ders Bazlı Ortalama Net
+              </h3>
+              <ResponsiveContainer
+                width="100%"
+                height={Math.max(180, courseAnalysis.length * 32)}
+              >
                 <BarChart
                   data={courseAnalysis.map((c) => ({
                     name: c.courseName,
@@ -571,8 +634,15 @@ export default function DevelopmentReportView({
                   layout="vertical"
                   margin={{ top: 4, right: 48, left: 4, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                  <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    stroke="#f1f5f9"
+                  />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
@@ -580,8 +650,18 @@ export default function DevelopmentReportView({
                     tick={{ fontSize: 10, fill: "#475569" }}
                   />
                   <Tooltip formatter={(v) => [`${v} net`, "Ortalama"]} />
-                  <Bar dataKey="net" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={16}>
-                    <LabelList dataKey="label" position="right" fill="#64748b" fontSize={10} />
+                  <Bar
+                    dataKey="net"
+                    fill="#4f46e5"
+                    radius={[0, 4, 4, 0]}
+                    barSize={16}
+                  >
+                    <LabelList
+                      dataKey="label"
+                      position="right"
+                      fill="#64748b"
+                      fontSize={10}
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -610,23 +690,41 @@ export default function DevelopmentReportView({
           {/* Son 5 deneme tablosu */}
           {mockExams.length > 0 && (
             <div className="mt-5">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">Son Denemeler</h3>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">
+                Son Denemeler
+              </h3>
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-slate-600 rounded-tl-lg">Deneme</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-600">Tür</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-600">Tarih</th>
-                    <th className="text-right px-3 py-2 text-xs font-semibold text-slate-600 rounded-tr-lg">Net</th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-slate-600 rounded-tl-lg">
+                      Deneme
+                    </th>
+                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-600">
+                      Tür
+                    </th>
+                    <th className="text-center px-3 py-2 text-xs font-semibold text-slate-600">
+                      Tarih
+                    </th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-slate-600 rounded-tr-lg">
+                      Net
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {[...mockExams]
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime(),
+                    )
                     .slice(0, 5)
                     .map((exam, i) => (
-                      <tr key={exam.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                        <td className="px-3 py-2 text-slate-800 font-medium">{exam.name}</td>
+                      <tr
+                        key={exam.id}
+                        className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                      >
+                        <td className="px-3 py-2 text-slate-800 font-medium">
+                          {exam.name}
+                        </td>
                         <td className="px-3 py-2 text-center">
                           <span
                             className={`text-xs font-bold px-2 py-0.5 rounded ${
@@ -654,7 +752,7 @@ export default function DevelopmentReportView({
       )}
 
       <p className="text-xs text-slate-400 mt-8 pt-4 border-t border-slate-100">
-        YKS Takip Çizelgesi — Gelişim Raporu — {reportDate}
+        MentorApp — Gelişim Raporu — {reportDate}
       </p>
     </div>
   );
