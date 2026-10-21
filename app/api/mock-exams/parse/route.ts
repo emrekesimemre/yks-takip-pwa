@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { denemeCoursesByType, getDenemeCourseDef } from "@/data/denemeCourses";
+import {
+  denemeCoursesByType,
+  getDenemeCourseDef,
+  getDenemeCourseDefByName,
+} from "@/data/denemeCourses";
 import { findCurriculumMatch } from "@/utils/topicMatcher";
 
 // Örnek test karnesi (Kafa Dengi TYT karne görseli verisi)
@@ -53,31 +57,10 @@ function normalizeText(text: string): string {
 
 function mapCourseNameToKey(courseName: string, examType: string): string {
   const norm = normalizeText(courseName);
-  const defs = denemeCoursesByType[examType] || denemeCoursesByType.TYT || [];
+  const matchedDef = getDenemeCourseDefByName(examType, courseName);
+  if (matchedDef) return matchedDef.key;
 
-  for (const def of defs) {
-    const defNorm = normalizeText(def.name);
-    if (defNorm.includes(norm) || norm.includes(defNorm)) {
-      return def.key;
-    }
-  }
-
-  // Özel eşleştirmeler
-  if (examType === "TYT") {
-    if (norm.includes("turk") || norm.includes("edeb")) return "TYT-Turkce";
-    if (norm.includes("mat") || norm.includes("geom")) return "TYT-Matematik";
-    if (norm.includes("tar")) return "TYT-Tarih";
-    if (norm.includes("cog")) return "TYT-Cografya";
-    if (norm.includes("fel")) return "TYT-Felsefe";
-    if (norm.includes("din") || norm.includes("ahlak")) return "TYT-Din";
-    if (norm.includes("fiz")) return "TYT-Fizik";
-    if (norm.includes("kim")) return "TYT-Kimya";
-    if (norm.includes("biy")) return "TYT-Biyoloji";
-    if (norm.includes("sos")) return "TYT-Sosyal";
-    if (norm.includes("fen")) return "TYT-Fen";
-  }
-
-  return defs[0]?.key || "GENEL";
+  return `UNMAPPED-${norm.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "course"}`;
 }
 
 export async function POST(req: NextRequest) {

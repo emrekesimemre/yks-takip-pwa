@@ -1,41 +1,60 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { FiWifiOff } from "react-icons/fi";
 
-// 1. Tarayıcının online/offline event'lerini dinleyen abone fonksiyonu
-function subscribe(callback: () => void) {
-  if (typeof window !== "undefined") {
-    window.addEventListener("online", callback);
-    window.addEventListener("offline", callback);
-    return () => {
-      window.removeEventListener("online", callback);
-      window.removeEventListener("offline", callback);
-    };
-  }
-  return () => {};
-}
-
-// 2. İstemcideki (Client) anlık durumu okuyan fonksiyon
-function getSnapshot() {
-  if (typeof navigator !== "undefined") {
-    return navigator.onLine;
-  }
-  return true;
-}
-
-// 3. Sunucuda (SSR) sayfa oluşturulurken varsayılan durumu okuyan fonksiyon
-function getServerSnapshot() {
-  return true; // Sunucuda her zaman online kabul ediyoruz ki hata vermesin
-}
-
 export default function OfflineBanner() {
-  // useEffect ve useState yerine React'in dış veri okuma kancasını kullanıyoruz
-  const isOnline = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    let offlineTimer: number | undefined;
+    let probeController: AbortController | undefined;
+
+    const verifyConnection = async () => {
+      probeController?.abort();
+      probeController = new AbortController();
+      const timeout = window.setTimeout(() => probeController?.abort(), 3000);
+
+      try {
+        await fetch("/icons/icon-192.png", {
+          cache: "no-store",
+          signal: probeController.signal,
+        });
+        setIsOnline(true);
+      } catch {
+        setIsOnline(false);
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    };
+
+    const handleOnline = () => {
+      window.clearTimeout(offlineTimer);
+      setIsOnline(true);
+      void verifyConnection();
+    };
+
+    const handleOffline = () => {
+      window.clearTimeout(offlineTimer);
+      offlineTimer = window.setTimeout(() => {
+        void verifyConnection();
+      }, 1500);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.clearTimeout(offlineTimer);
+      probeController?.abort();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   if (isOnline) return null;
 
@@ -48,7 +67,7 @@ export default function OfflineBanner() {
         İnternet Bağlantısı Koptu
       </h2>
       <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">
-        MentorApp'i kullanmaya devam etmek için lütfen Wi-Fi veya hücresel veri
+        MentorApp&apos;i kullanmaya devam etmek için lütfen Wi-Fi veya hücresel veri
         bağlantınızı kontrol edin.
       </p>
       <button

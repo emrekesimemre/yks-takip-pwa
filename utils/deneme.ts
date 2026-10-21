@@ -1,4 +1,7 @@
-import { denemeCoursesByType } from "@/data/denemeCourses";
+import {
+  denemeCoursesByType,
+  getDenemeCourseDefByName,
+} from "@/data/denemeCourses";
 import type { MockExam, MockExamCourseResult } from "@/store/useStudentStore";
 
 export function calculateNet(correct: number, wrong: number): number {
@@ -9,8 +12,38 @@ export function calculateCourseNet(result: MockExamCourseResult): number {
   return calculateNet(result.correct, result.wrong);
 }
 
+export function getEffectiveExamCourses(exam: MockExam): MockExamCourseResult[] {
+  const topics = exam.topics ?? exam.wrongTopics ?? [];
+  if (topics.length === 0) return exam.courses;
+
+  const courses = new Map<string, MockExamCourseResult>();
+  for (const topic of topics) {
+    const courseName = topic.courseName?.trim().replace(/\s+/g, " ");
+    const courseKey = courseName
+      ? `NAME-${courseName.toLocaleLowerCase("tr-TR")}`
+      : topic.courseKey || "UNMAPPED-course";
+    const existing = courses.get(courseKey) ?? {
+      courseKey,
+      courseName,
+      correct: 0,
+      wrong: 0,
+      empty: 0,
+    };
+    existing.correct += Number(topic.correctCount || 0);
+    existing.wrong += Number(topic.wrongCount || 0);
+    existing.empty += Number(topic.emptyCount || 0);
+    if (courseName) existing.courseName = courseName;
+    courses.set(courseKey, existing);
+  }
+
+  return Array.from(courses.values());
+}
+
 export function calculateExamTotalNet(exam: MockExam): number {
-  return exam.courses.reduce((sum, c) => sum + calculateCourseNet(c), 0);
+  return getEffectiveExamCourses(exam).reduce(
+    (sum, c) => sum + calculateCourseNet(c),
+    0,
+  );
 }
 
 export function formatNet(net: number): string {
@@ -21,16 +54,19 @@ export function formatNet(net: number): string {
 }
 
 export function calculateExamTotals(exam: MockExam) {
-  const correct = exam.courses.reduce((s, c) => s + c.correct, 0);
-  const wrong = exam.courses.reduce((s, c) => s + c.wrong, 0);
-  const empty = exam.courses.reduce((s, c) => s + c.empty, 0);
+  const courses = getEffectiveExamCourses(exam);
+  const correct = courses.reduce((s, c) => s + c.correct, 0);
+  const wrong = courses.reduce((s, c) => s + c.wrong, 0);
+  const empty = courses.reduce((s, c) => s + c.empty, 0);
   const net = calculateNet(correct, wrong);
   const total = correct + wrong + empty;
   const courseDefs = denemeCoursesByType[exam.type] ?? [];
   const maxTotal =
-    exam.courses.length > 0
-      ? exam.courses.reduce((s, c) => {
-          const def = courseDefs.find((d) => d.key === c.courseKey);
+    courses.length > 0
+      ? courses.reduce((s, c) => {
+          const def =
+            (c.courseName && getDenemeCourseDefByName(exam.type, c.courseName)) ||
+            courseDefs.find((d) => d.key === c.courseKey);
           return s + (def?.maxQuestions ?? (c.correct + c.wrong + c.empty));
         }, 0)
       : courseDefs.reduce((s, c) => s + c.maxQuestions, 0);
@@ -109,21 +145,26 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
       wrongs: number[];
       empties: number[];
       segments: ProgressSegments[];
+      successRates: number[];
     }
   >();
 
   exams.forEach((exam) => {
-    exam.courses.forEach((c) => {
-      const def = (denemeCoursesByType[exam.type] ?? []).find(
+    getEffectiveExamCourses(exam).forEach((c) => {
+      const keyDef = (denemeCoursesByType[exam.type] ?? []).find(
         (d) => d.key === c.courseKey,
       );
+      const def = keyDef ?? (c.courseName
+        ? getDenemeCourseDefByName(exam.type, c.courseName)
+        : undefined);
       if (!hasAnsweredQuestions(c.correct, c.wrong, c.empty)) return;
 
       const courseName = c.courseName || def?.name || c.courseKey;
+      const analysisKey = c.courseKey;
       const maxQuestions =
         def?.maxQuestions || c.correct + c.wrong + c.empty || 20;
 
-      const existing = stats.get(c.courseKey) ?? {
+      const existing = stats.get(analysisKey) ?? {
         courseName,
         maxQuestions,
         nets: [],
@@ -131,16 +172,19 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
         wrongs: [],
         empties: [],
         segments: [],
+        successRates: [],
       };
 
       existing.nets.push(calculateCourseNet(c));
       existing.corrects.push(c.correct);
       existing.wrongs.push(c.wrong);
       existing.empties.push(c.empty);
+      const questionCount = c.correct + c.wrong + c.empty || def?.maxQuestions || 20;
+      existing.successRates.push(getSuccessRate(c.correct, questionCount));
       existing.segments.push(
-        getProgressSegments(c.correct, c.wrong, c.empty, maxQuestions),
+        getProgressSegments(c.correct, c.wrong, c.empty, questionCount),
       );
-      stats.set(c.courseKey, existing);
+      stats.set(analysisKey, existing);
     });
   });
 
@@ -152,9 +196,7 @@ export function analyzeByCourse(exams: MockExam[]): CourseAnalysis[] {
       avgNet: avg(s.nets),
       avgCorrect: avg(s.corrects),
       avgWrong: avg(s.wrongs),
-      avgSuccessRate: avg(
-        s.corrects.map((correct) => getSuccessRate(correct, s.maxQuestions)),
-      ),
+      avgSuccessRate: avg(s.successRates),
       progressSegments: {
         correct: avg(s.segments.map((segment) => segment.correct)),
         wrong: avg(s.segments.map((segment) => segment.wrong)),

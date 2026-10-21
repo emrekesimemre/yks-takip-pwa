@@ -263,8 +263,18 @@ export default function UploadMockExamModal({
       return;
     }
 
+    const topicsToSave = wrongTopics.filter((t) => t.selected !== false);
+    const sourceCourses = wrongTopics.length > 0
+      ? wrongTopics.map((topic) => ({
+          courseKey: topic.courseKey || "UNMAPPED-course",
+          courseName: topic.courseName,
+          correct: topic.correctCount || 0,
+          wrong: topic.wrongCount || 0,
+          empty: topic.emptyCount || 0,
+        }))
+      : courses;
     const mergedCoursesMap = new Map<string, MockExamCourseResult>();
-    for (const c of courses) {
+    for (const c of sourceCourses) {
       const existing = mergedCoursesMap.get(c.courseKey) || {
         courseKey: c.courseKey,
         courseName: c.courseName,
@@ -285,8 +295,7 @@ export default function UploadMockExamModal({
       type: examType,
       date: examDate,
       courses: Array.from(mergedCoursesMap.values()),
-      topics: wrongTopics
-        .filter((t) => t.selected !== false)
+      topics: topicsToSave
         .map((t) => ({
           courseKey: t.courseKey,
           courseName: t.courseName,
@@ -298,10 +307,9 @@ export default function UploadMockExamModal({
           matchedTopicId: t.matchedTopicId,
           matchedTopicTitle: t.matchedTopicTitle,
         })),
-      wrongTopics: wrongTopics
+      wrongTopics: topicsToSave
         .filter(
           (t) =>
-            t.selected !== false &&
             ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0),
         )
         .map((t) => ({

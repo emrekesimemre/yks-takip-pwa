@@ -103,6 +103,59 @@ export function getDenemeCourseDef(
   return (denemeCoursesByType[type] ?? []).find((c) => c.key === courseKey);
 }
 
+function normalizeCourseName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ö/g, "o")
+    .replace(/ş/g, "s")
+    .replace(/ü/g, "u")
+    .trim();
+}
+
+export function getDenemeCourseDefByName(
+  type: string,
+  courseName: string,
+): DenemeCourseDef | undefined {
+  const norm = normalizeCourseName(courseName);
+  const defs = denemeCoursesByType[type] ?? [];
+  if (!norm) return undefined;
+
+  const directMatch = defs.find((def) => {
+    const defName = normalizeCourseName(def.name);
+    return defName.includes(norm) || norm.includes(defName);
+  });
+  if (directMatch) return directMatch;
+
+  const aliases: Array<[string[], string]> = [
+    [["turkce", "turk dili", "edebiyat"], "turkce"],
+    [["matematik", "mat"], "matematik"],
+    [["temel matematik", "tmat"], "tmat"],
+    [["tarih"], "tarih"],
+    [["cografya", "cograf"], "cografya"],
+    [["felsefe", "mantik"], "felsefe"],
+    [["din", "ahlak", "din kult", "din kultur"], "din"],
+    [["fizik"], "fizik"],
+    [["kimya"], "kimya"],
+    [["biyoloji", "biy"], "biyoloji"],
+    [["fen"], "fen"],
+    [["sosyal"], "sosyal"],
+    [["ingilizce", "english"], "ingilizce"],
+  ];
+
+  for (const [patterns, suffix] of aliases) {
+    if (!patterns.some((pattern) => norm.includes(pattern))) continue;
+    const matches = defs.filter((def) =>
+      normalizeCourseName(def.key).endsWith(`-${suffix}`),
+    );
+    if (matches.length === 1) return matches[0];
+  }
+
+  return undefined;
+}
+
 export function getDenemeExamTypesForStudent(
   grade?: string,
   field?: string,

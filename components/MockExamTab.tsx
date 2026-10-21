@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   denemeCoursesByType,
+  getDenemeCourseDefByName,
   getDenemeExamTypesForStudent,
   getDenemeExamTypeLabel,
 } from "@/data/denemeCourses";
@@ -36,6 +37,7 @@ import {
   formatSuccessRate,
   getExamTrend,
   getProgressSegments,
+  getEffectiveExamCourses,
   getWeakestCourses,
   hasAnsweredQuestions,
 } from "@/utils/deneme";
@@ -454,10 +456,16 @@ export default function MockExamTab({
                         </div>
 
                         <div className="space-y-2">
-                          {exam.courses.map((c) => {
-                            const def = denemeCoursesByType[exam.type]?.find(
-                              (d) => d.key === c.courseKey,
-                            ) || {
+                          {getEffectiveExamCourses(exam).map((c) => {
+                            const def =
+                              (c.courseName &&
+                                getDenemeCourseDefByName(
+                                  exam.type,
+                                  c.courseName,
+                                )) ||
+                              denemeCoursesByType[exam.type]?.find(
+                                (d) => d.key === c.courseKey,
+                              ) || {
                               key: c.courseKey,
                               name:
                                 c.courseName ||
