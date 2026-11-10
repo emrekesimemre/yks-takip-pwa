@@ -326,9 +326,9 @@ export default function MockExamTab({
                 {courseAnalysis.map((c) => (
                   <div
                     key={c.courseKey}
-                    className="flex items-center gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-100 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-100 transition-colors"
                   >
-                    <div className="w-32 shrink-0">
+                    <div className="w-full sm:w-32 shrink-0 flex justify-between sm:block">
                       <p className="text-sm font-medium text-slate-800">
                         {c.courseName}
                       </p>
@@ -336,8 +336,8 @@ export default function MockExamTab({
                         {c.examCount} deneme
                       </p>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs mb-1">
+                    <div className="flex-1 w-full">
+                      <div className="flex justify-between text-xs mb-1 flex-wrap gap-1">
                         <span className="text-green-600">
                           D: {c.avgCorrect.toFixed(1)}
                         </span>
@@ -375,61 +375,99 @@ export default function MockExamTab({
                     key={exam.id}
                     className="border border-slate-200 rounded-xl overflow-hidden hover:border-blue-200 hover:shadow-sm transition-all"
                   >
-                    <div className="flex items-stretch">
+                    <div className="flex flex-col sm:flex-row sm:items-stretch">
                       <button
+                        type="button"
                         onClick={() =>
                           setExpandedId(isExpanded ? null : exam.id)
                         }
-                        className="flex-1 flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left min-w-0"
+                        className="flex-1 p-3.5 sm:p-4 hover:bg-slate-50 transition-colors text-left min-w-0"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded shrink-0 bg-blue-100 text-blue-700">
-                            {getDenemeExamTypeLabel(exam.type)}
-                          </span>
-                          <div className="min-w-0">
+                        <div className="flex items-start sm:items-center justify-between gap-3">
+                          {/* Sol Kısım */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="text-xs font-bold px-2 py-0.5 rounded shrink-0 bg-blue-100 text-blue-700">
+                                {getDenemeExamTypeLabel(exam.type)}
+                              </span>
+                              <span className="text-xs text-slate-400">
+                                {formatDate(exam.date)}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-semibold text-slate-800 truncate">
-                                {exam.name}
+                              <p className="font-semibold text-slate-800 text-sm sm:text-base break-words">
+                                {exam.name || "Deneme Sınavı"}
                               </p>
                               {((exam.topics && exam.topics.length > 0) ||
-                                (exam.wrongTopics && exam.wrongTopics.length > 0)) && (
+                                (exam.wrongTopics &&
+                                  exam.wrongTopics.length > 0)) && (
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
-                                  📊 {exam.topics?.length || exam.wrongTopics?.length} Konu Analizi
+                                  📊{" "}
+                                  {exam.topics?.length ||
+                                    exam.wrongTopics?.length}{" "}
+                                  Konu Analizi
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                              {formatDate(exam.date)}
-                            </p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0 ml-2">
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-blue-600">
-                              {formatNet(totalNet)}
-                            </p>
-                            <p className="text-xs text-slate-400">net</p>
+
+                          {/* Sağ Kısım: Net ve Ok */}
+                          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 self-center">
+                            <div className="text-right">
+                              <p className="text-base sm:text-lg font-bold text-blue-600 leading-tight">
+                                {formatNet(totalNet)}
+                              </p>
+                              <p className="text-[11px] text-slate-400 leading-none">
+                                net
+                              </p>
+                            </div>
+                            <span className="text-slate-400">
+                              {isExpanded ? (
+                                <FiChevronUp />
+                              ) : (
+                                <FiChevronDown />
+                              )}
+                            </span>
                           </div>
-                          <span className="text-slate-400">
-                            {isExpanded ? (
-                              <FiChevronUp />
-                            ) : (
-                              <FiChevronDown />
-                            )}
-                          </span>
                         </div>
                       </button>
+
+                      {/* Mobil Aksiyon Butonları (Alt Bar) */}
+                      <div className="flex sm:hidden items-center justify-end gap-2 px-3 py-1.5 border-t border-slate-100 bg-slate-50/60">
+                        <button
+                          type="button"
+                          onClick={(e) => handleEditClick(exam, e)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          aria-label="Denemeyi düzenle"
+                        >
+                          <FiEdit2 size={12} />
+                          <span>Düzenle</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteClick(exam, e)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          aria-label="Denemeyi sil"
+                        >
+                          <FiTrash2 size={12} />
+                          <span>Sil</span>
+                        </button>
+                      </div>
+
+                      {/* Masaüstü Aksiyon Butonları (Sağ Dikey Sütun) */}
                       <button
+                        type="button"
                         onClick={(e) => handleEditClick(exam, e)}
-                        className="px-4 border-l border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors shrink-0"
+                        className="hidden sm:flex items-center justify-center px-4 border-l border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors shrink-0"
                         aria-label="Denemeyi düzenle"
                         title="Düzenle"
                       >
                         <FiEdit2 />
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => handleDeleteClick(exam, e)}
-                        className="px-4 border-l border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+                        className="hidden sm:flex items-center justify-center px-4 border-l border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
                         aria-label="Denemeyi sil"
                         title="Sil"
                       >
