@@ -358,6 +358,9 @@ export const masterCurriculum: Curriculum = {
 // MEB 9. Sınıf Müfredatı
 export const grade9Curriculum: Course = {
   "Türk Dili ve Edebiyatı": topics("g9-tur", [
+    "Okuma ve Anlama",
+    "Dil Bilgisi Genel Konular",
+    "Ses, Yazım ve Noktalama",
     "Giriş (Edebiyat, Dil, İletişim)",
     "Hikâye (Olay ve Durum Hikâyesi)",
     "Şiir (Nazım Birimi, Ölçü, Kafiye, Söz Sanatları)",
@@ -395,14 +398,14 @@ export const grade9Curriculum: Course = {
   Kimya: topics("g9-kim", [
     "Kimya Bilimi (Simyadan Kimyaya, Güvenlik Kuralları)",
     "Atom ve Periyodik Sistem (Modeller, Periyodik Özellikler)",
-    "Kimyasal Türler Arası Etkileşimler (İyonik, Kovalent, Metalik, Zayıf)",
+    "Kimyasal Türler Arası Etkileşimler (İyonik, Kovalent, Metalik, Zayıf Etkileşim)",
     "Maddenin Halleri (Katılar, Sıvılar, Gazlar, Plazma)",
     "Doğa ve Kimya (Su, Hayat, Çevre Kimyası)",
   ]),
   Biyoloji: topics("g9-biy", [
     "Yaşam Bilimi Biyoloji (Canlıların Ortak Özellikleri)",
     "Canlıların Temel Bileşenleri (Organik ve İnorganik Maddeler)",
-    "Enzimler, Nükleik Asitler ve ATP",
+    "Enzimler, Nükleik Asitler ve ATP (Enerji)",
     "Hücrenin Yapısı ve Organeller",
     "Hücre Zarı ve Madde Geçişleri",
     "Canlılar Dünyası ve Canlıların Sınıflandırılması",
@@ -416,9 +419,9 @@ export const grade9Curriculum: Course = {
     "Türklerin İslamiyet'i Kabulü ve İlk Türk İslam Devletleri",
   ]),
   Coğrafya: topics("g9-cog", [
-    "Doğa ve İnsan Etkileşimi",
+    "Doğal Sistemler: Coğrafyanın Doğası (Doğa ve İnsan Etkileşimi)",
     "Coğrafi Konum ve Koordinat Sistemi",
-    "Harita Bilgisi ve Ölçekler",
+    "Mekânsal Bilgi Teknolojileri (Harita Bilgisi ve Ölçekler)",
     "Dünyanın Şekli ve Hareketleri",
     "İklim Elemanları (Sıcaklık, Basınç, Rüzgar, Nem)",
     "Türkiye'nin İklimi ve Bitki Örtüsü",
@@ -447,6 +450,9 @@ export const grade9EnglishTopics = topics("g9-ing", [
 // MEB 10. Sınıf Müfredatı
 export const grade10Curriculum: Course = {
   "Türk Dili ve Edebiyatı": topics("g10-tur", [
+    "Okuma ve Anlama",
+    "Dil Bilgisi Genel Konular",
+    "Ses, Yazım ve Noktalama",
     "Giriş (Türkçenin Tarihi Gelişimi)",
     "Hikâye (Dede Korkut, Halk Hikâyesi, Tanzimat)",
     "Şiir (İslamiyet Öncesi, Divan ve Halk Şiiri)",
@@ -500,7 +506,7 @@ export const grade10Curriculum: Course = {
     "Güncel Çevre Sorunları ve Biyolojik Çeşitlilik",
   ]),
   Tarih: topics("g10-tar", [
-    "Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi",
+    "Türkistan'dan Türkiye'ye (1040-1299) - Selçuklu Türkiyesi",
     "Beylikten Devlete Osmanlı Siyaseti (1302-1453)",
     "Devletleşme Sürecinde Savaşçılar ve Askerler",
     "Beylikten Devlete Osmanlı Medeniyeti",
@@ -509,7 +515,7 @@ export const grade10Curriculum: Course = {
     "Klasik Çağda Osmanlı Toplum Düzeni",
   ]),
   Coğrafya: topics("g10-cog", [
-    "Yerin Yapısı ve Levha Tektoniği (İç Kuvvetler)",
+    "Doğal Sistemler: Coğrafyanın Doğası ve Levha Tektoniği (İç Kuvvetler)",
     "Dış Kuvvetler (Akarsu, Rüzgâr, Buzul, Dalgalar)",
     "Türkiye'de Su, Toprak ve Bitki Varlığı",
     "Nüfusun Gelişimi, Dağılışı ve Nüfus Piramitleri",
@@ -518,7 +524,8 @@ export const grade10Curriculum: Course = {
     "Uluslararası Ulaşım Hatları ve Doğal Afetler",
   ]),
   Felsefe: topics("g10-fel", [
-    "Felsefeyi Tanıma ve Akıl Yürütme",
+    "Felsefenin Doğası ve Akıl Yürütme (Felsefeyi Tanıma)",
+    "Felsefe, Mantık ve Argümantasyon",
     "Varlık Felsefesi (Ontoloji)",
     "Bilgi Felsefesi (Epistemoloji)",
     "Ahlak ve Siyaset Felsefesi",
@@ -526,7 +533,7 @@ export const grade10Curriculum: Course = {
     "Felsefi Okuma ve Yazma",
   ]),
   "Din Kültürü": topics("g10-din", [
-    "Allah İnancı ve İnsan",
+    "İslam'da Varlık ve Bilgi / Allah İnancı ve İnsan",
     "Hz. Muhammed ve Gençlik",
     "Din ve Hayat",
     "Ahlaki Tutum ve Davranışlar",

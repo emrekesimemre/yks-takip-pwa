@@ -1,32 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import AddMockExamModal from "@/components/AddMockExamModal";
+import ConfirmModal from "@/components/ConfirmModal";
+import MockExamReportModal from "@/components/MockExamReportModal";
+import UploadMockExamModal from "@/components/UploadMockExamModal";
 import {
   denemeCoursesByType,
   getDenemeCourseDefByName,
-  getDenemeExamTypesForStudent,
   getDenemeExamTypeLabel,
+  getDenemeExamTypesForStudent,
 } from "@/data/denemeCourses";
 import type { MockExam } from "@/store/useStudentStore";
-import AddMockExamModal from "@/components/AddMockExamModal";
-import UploadMockExamModal from "@/components/UploadMockExamModal";
-import ConfirmModal from "@/components/ConfirmModal";
-import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
-  FiChevronDown,
-  FiChevronUp,
-  FiFileText,
-  FiCamera,
-  FiAlertTriangle,
-  FiList,
-  FiCheck,
-  FiCalendar,
-} from "react-icons/fi";
-import { toast } from "sonner";
-import MockExamReportModal from "@/components/MockExamReportModal";
 import {
   analyzeByCourse,
   calculateCourseNet,
@@ -35,12 +19,28 @@ import {
   formatDate,
   formatNet,
   formatSuccessRate,
+  getEffectiveExamCourses,
   getExamTrend,
   getProgressSegments,
-  getEffectiveExamCourses,
   getWeakestCourses,
   hasAnsweredQuestions,
 } from "@/utils/deneme";
+import { findCurriculumMatch } from "@/utils/topicMatcher";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import {
+  FiCalendar,
+  FiCamera,
+  FiCheck,
+  FiChevronDown,
+  FiChevronUp,
+  FiEdit2,
+  FiFileText,
+  FiList,
+  FiPlus,
+  FiTrash2,
+} from "react-icons/fi";
+import { toast } from "sonner";
 
 type Props = {
   studentName?: string;
@@ -97,9 +97,8 @@ export default function MockExamTab({
 
   const avgNet =
     trend.length > 0
-      ? Math.round(
-          (trend.reduce((s, t) => s + t.net, 0) / trend.length) * 10,
-        ) / 10
+      ? Math.round((trend.reduce((s, t) => s + t.net, 0) / trend.length) * 10) /
+        10
       : 0;
 
   const lastExam = sorted[0];
@@ -234,11 +233,13 @@ export default function MockExamTab({
                   Son Deneme: {lastExam.name}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
-                  {lastExam.topics?.length || lastExam.wrongTopics?.length || 0} Konu Kayıtlı
+                  {lastExam.topics?.length || lastExam.wrongTopics?.length || 0}{" "}
+                  Konu Kayıtlı
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Karneden taranan konu bazlı Doğru, Yanlış ve Boş karnesi hazır. İncelemek için tıklayın.
+                Karneden taranan konu bazlı Doğru, Yanlış ve Boş karnesi hazır.
+                İncelemek için tıklayın.
               </p>
             </div>
           </div>
@@ -246,7 +247,11 @@ export default function MockExamTab({
             type="button"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto cursor-pointer"
           >
-            <span>{expandedId === lastExam.id ? "Analizi Kapat" : "Konu Analizini Aç"}</span>
+            <span>
+              {expandedId === lastExam.id
+                ? "Analizi Kapat"
+                : "Konu Analizini Aç"}
+            </span>
             {expandedId === lastExam.id ? <FiChevronUp /> : <FiChevronDown />}
           </button>
         </div>
@@ -302,7 +307,11 @@ export default function MockExamTab({
                     animate={{
                       height: `${Math.max(8, (t.net / maxTrendNet) * 100)}%`,
                     }}
-                    transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
+                    transition={{
+                      delay: i * 0.05,
+                      duration: 0.5,
+                      ease: "easeOut",
+                    }}
                     className="w-10 bg-gradient-to-t from-blue-600 to-indigo-400 rounded-t-lg min-h-[8px]"
                   />
                   <span className="text-[10px] text-slate-400 text-center leading-tight max-w-[48px] truncate">
@@ -422,11 +431,7 @@ export default function MockExamTab({
                               </p>
                             </div>
                             <span className="text-slate-400">
-                              {isExpanded ? (
-                                <FiChevronUp />
-                              ) : (
-                                <FiChevronDown />
-                              )}
+                              {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
                             </span>
                           </div>
                         </div>
@@ -478,9 +483,21 @@ export default function MockExamTab({
                     {isExpanded && (
                       <div className="border-t border-slate-100 p-4 bg-slate-50 space-y-3">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                          <MiniStat label="Doğru" value={totals.correct} color="green" />
-                          <MiniStat label="Yanlış" value={totals.wrong} color="red" />
-                          <MiniStat label="Boş" value={totals.empty} color="slate" />
+                          <MiniStat
+                            label="Doğru"
+                            value={totals.correct}
+                            color="green"
+                          />
+                          <MiniStat
+                            label="Yanlış"
+                            value={totals.wrong}
+                            color="red"
+                          />
+                          <MiniStat
+                            label="Boş"
+                            value={totals.empty}
+                            color="slate"
+                          />
                           <MiniStat
                             label="Başarı"
                             value={formatSuccessRate(
@@ -495,24 +512,23 @@ export default function MockExamTab({
 
                         <div className="space-y-2">
                           {getEffectiveExamCourses(exam).map((c) => {
-                            const def =
-                              (c.courseName &&
-                                getDenemeCourseDefByName(
-                                  exam.type,
-                                  c.courseName,
-                                )) ||
+                            const def = (c.courseName &&
+                              getDenemeCourseDefByName(
+                                exam.type,
+                                c.courseName,
+                              )) ||
                               denemeCoursesByType[exam.type]?.find(
                                 (d) => d.key === c.courseKey,
                               ) || {
-                              key: c.courseKey,
-                              name:
-                                c.courseName ||
-                                c.courseKey.replace(/^[A-Z0-9]+-/, ""),
-                              maxQuestions:
-                                c.correct + c.wrong + c.empty > 0
-                                  ? c.correct + c.wrong + c.empty
-                                  : 20,
-                            };
+                                key: c.courseKey,
+                                name:
+                                  c.courseName ||
+                                  c.courseKey.replace(/^[A-Z0-9]+-/, ""),
+                                maxQuestions:
+                                  c.correct + c.wrong + c.empty > 0
+                                    ? c.correct + c.wrong + c.empty
+                                    : 20,
+                              };
                             const displayName = c.courseName || def.name;
                             const maxQ =
                               def.maxQuestions ||
@@ -570,7 +586,8 @@ export default function MockExamTab({
 
                         {/* Karnede Tespit Edilen Konu Analiz Verisi */}
                         {((exam.topics && exam.topics.length > 0) ||
-                          (exam.wrongTopics && exam.wrongTopics.length > 0)) && (
+                          (exam.wrongTopics &&
+                            exam.wrongTopics.length > 0)) && (
                           <ExamTopicAnalysis
                             topics={
                               exam.topics && exam.topics.length > 0
@@ -579,6 +596,8 @@ export default function MockExamTab({
                             }
                             weeklySelectedTopics={weeklySelectedTopics}
                             onAddTopicsToPlan={onAddTopicsToPlan}
+                            grade={grade}
+                            field={field}
                           />
                         )}
                       </div>
@@ -712,6 +731,8 @@ function ExamTopicAnalysis({
   topics,
   weeklySelectedTopics,
   onAddTopicsToPlan,
+  grade,
+  field,
 }: {
   topics: Array<{
     courseKey?: string;
@@ -726,9 +747,49 @@ function ExamTopicAnalysis({
   }>;
   weeklySelectedTopics?: string[];
   onAddTopicsToPlan?: (topicIds: string[]) => void;
+  grade?: string;
+  field?: string;
 }) {
   const [filter, setFilter] = useState<"all" | "weak" | "correct">("all");
   const [search, setSearch] = useState("");
+
+  // Konunun müfredat ID'sini çözümle (müfredatta arar; bulamazsa deneme konusu olarak plana eklemeyi sağlar)
+  const resolveTopicMatch = (t: {
+    topicName: string;
+    courseName?: string;
+    courseKey?: string;
+    matchedTopicId?: string;
+    matchedTopicTitle?: string;
+  }) => {
+    if (t.matchedTopicId) {
+      return {
+        id: t.matchedTopicId,
+        title: t.matchedTopicTitle || t.topicName,
+      };
+    }
+    const match = findCurriculumMatch(
+      t.topicName,
+      t.courseName || t.courseKey,
+      grade,
+      field,
+    );
+    if (match) {
+      return {
+        id: match.id,
+        title: match.title,
+      };
+    }
+    // Müfredatta eşleşmese bile öğretmenin ve öğrencinin bu konuyu haftalık plana alabilmesi için özel deneme konusu oluştur
+    const cleanCourse = (t.courseName || t.courseKey || "Deneme").replace(
+      /::/g,
+      "-",
+    );
+    const cleanTopic = t.topicName.replace(/::/g, "-");
+    return {
+      id: `custom::${cleanCourse}::${cleanTopic}`,
+      title: t.topicName,
+    };
+  };
 
   const filtered = topics.filter((t) => {
     if (search.trim()) {
@@ -760,14 +821,15 @@ function ExamTopicAnalysis({
       (!t.emptyCount || t.emptyCount === 0),
   ).length;
 
-  const missingWithMatch = topics.filter(
-    (t) =>
-      Boolean(t.matchedTopicId) &&
-      ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0),
-  );
-  const unplannedTopics = missingWithMatch.filter(
-    (t) => !weeklySelectedTopics?.includes(t.matchedTopicId!),
-  );
+  const missingWithMatch = topics.filter((t) => {
+    const isWeak = (t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0;
+    const match = resolveTopicMatch(t);
+    return isWeak && Boolean(match?.id);
+  });
+  const unplannedTopics = missingWithMatch.filter((t) => {
+    const match = resolveTopicMatch(t);
+    return match?.id && !weeklySelectedTopics?.includes(match.id);
+  });
 
   return (
     <div
@@ -789,10 +851,18 @@ function ExamTopicAnalysis({
             <button
               type="button"
               onClick={() => {
-                const ids = unplannedTopics.map((t) => t.matchedTopicId!);
+                const ids = Array.from(
+                  new Set(
+                    unplannedTopics
+                      .map((t) => resolveTopicMatch(t)?.id)
+                      .filter(Boolean) as string[],
+                  ),
+                );
                 if (ids.length > 0) {
                   onAddTopicsToPlan(ids);
-                  toast.success(`${ids.length} eksik konu haftalık plana eklendi!`);
+                  toast.success(
+                    `${ids.length} eksik konu haftalık plana eklendi!`,
+                  );
                 }
               }}
               disabled={unplannedTopics.length === 0}
@@ -863,7 +933,7 @@ function ExamTopicAnalysis({
         </div>
       )}
 
-      <div className="max-h-80 overflow-y-auto space-y-1 pr-1 divide-y divide-slate-100">
+      <div className="max-h-80 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100">
         {filtered.length === 0 ? (
           <div className="text-center py-6 text-xs text-slate-400">
             Filtreye uygun konu bulunamadı.
@@ -875,93 +945,142 @@ function ExamTopicAnalysis({
             const eCount = t.emptyCount || 0;
             const qCount = t.questionCount || cCount + wCount + eCount;
             const rate = qCount > 0 ? Math.round((cCount / qCount) * 100) : 0;
+            const match = resolveTopicMatch(t);
             const isAlreadyInPlan = Boolean(
-              t.matchedTopicId && weeklySelectedTopics?.includes(t.matchedTopicId),
+              match?.id && weeklySelectedTopics?.includes(match.id),
             );
 
             return (
               <div
                 key={idx}
-                className="flex items-center justify-between pt-2 pb-1.5 text-xs hover:bg-slate-50/70 px-2 rounded-lg transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 py-2 text-xs hover:bg-slate-50/70 px-2 rounded-lg transition-colors"
               >
-                <div className="min-w-0 pr-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                {/* 1. Satır: Ders Rozeti + Konu Adı (Solda) & Mobilde Plana Ekle Butonu (Sağda) */}
+                <div className="flex items-start justify-between gap-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 shrink-0">
                       {t.courseName || t.courseKey}
                     </span>
                     <span
-                      className="font-semibold text-slate-800 truncate"
+                      className="font-semibold text-slate-800 break-words sm:truncate"
                       title={t.topicName}
                     >
                       {t.topicName}
                     </span>
                   </div>
+
+                  {/* SADECE MOBİLDE: Buton her zaman 1. satırın sağında sabit */}
+                  <div className="sm:hidden shrink-0 ml-1">
+                    {match?.id && onAddTopicsToPlan ? (
+                      <button
+                        type="button"
+                        disabled={isAlreadyInPlan}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddTopicsToPlan([match.id]);
+                          toast.success(
+                            `${match.title || t.topicName} haftalık plana eklendi!`,
+                          );
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all ${
+                          isAlreadyInPlan
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
+                            : "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 active:scale-95 cursor-pointer shadow-2xs"
+                        }`}
+                      >
+                        {isAlreadyInPlan ? (
+                          <>
+                            <FiCheck className="text-[10px]" /> Planda
+                          </>
+                        ) : (
+                          <>
+                            <FiPlus className="text-[10px]" /> Plana Ekle
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[10px] text-slate-400 border border-dashed border-slate-200"
+                        title="Bu konu müfredat listesiyle doğrudan eşleşmedi"
+                      >
+                        Eşleşmedi
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-                    {qCount} Soru:
-                  </span>
-                  {cCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {cCount} D
+                {/* 2. Satır: Soru Sayıları ve Masaüstünde Plana Ekle Butonu */}
+                <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
+                      {qCount} Soru:
                     </span>
-                  )}
-                  {wCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                      {wCount} Y
-                    </span>
-                  )}
-                  {eCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                      {eCount} B
-                    </span>
-                  )}
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      rate === 100
-                        ? "bg-emerald-100 text-emerald-800"
-                        : rate >= 50
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-rose-100 text-rose-800"
-                    }`}
-                  >
-                    %{rate}
-                  </span>
-
-                  {t.matchedTopicId && onAddTopicsToPlan && (
-                    <button
-                      type="button"
-                      disabled={isAlreadyInPlan}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddTopicsToPlan([t.matchedTopicId!]);
-                        toast.success(
-                          `${t.matchedTopicTitle || t.topicName} haftalık plana eklendi!`,
-                        );
-                      }}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all ${
-                        isAlreadyInPlan
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
-                          : "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 active:scale-95 cursor-pointer"
+                    {cCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {cCount} D
+                      </span>
+                    )}
+                    {wCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        {wCount} Y
+                      </span>
+                    )}
+                    {eCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        {eCount} B
+                      </span>
+                    )}
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        rate === 100
+                          ? "bg-emerald-100 text-emerald-800"
+                          : rate >= 50
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-rose-100 text-rose-800"
                       }`}
-                      title={
-                        isAlreadyInPlan
-                          ? "Bu konu zaten haftalık planda ekli"
-                          : "Bu konuyu haftalık plana ekle"
-                      }
                     >
-                      {isAlreadyInPlan ? (
-                        <>
-                          <FiCheck className="text-[10px]" /> Planda
-                        </>
-                      ) : (
-                        <>
-                          <FiPlus className="text-[10px]" /> Plana Ekle
-                        </>
-                      )}
-                    </button>
-                  )}
+                      %{rate}
+                    </span>
+                  </div>
+
+                  {/* SADECE MASAÜSTÜNDE: Buton en sağda */}
+                  <div className="hidden sm:block shrink-0">
+                    {match?.id && onAddTopicsToPlan ? (
+                      <button
+                        type="button"
+                        disabled={isAlreadyInPlan}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddTopicsToPlan([match.id]);
+                          toast.success(
+                            `${match.title || t.topicName} haftalık plana eklendi!`,
+                          );
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all ${
+                          isAlreadyInPlan
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
+                            : "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 active:scale-95 cursor-pointer shadow-2xs"
+                        }`}
+                      >
+                        {isAlreadyInPlan ? (
+                          <>
+                            <FiCheck className="text-[10px]" /> Planda
+                          </>
+                        ) : (
+                          <>
+                            <FiPlus className="text-[10px]" /> Plana Ekle
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[10px] text-slate-400 border border-dashed border-slate-200"
+                        title="Bu konu müfredat listesiyle doğrudan eşleşmedi"
+                      >
+                        Eşleşmedi
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );

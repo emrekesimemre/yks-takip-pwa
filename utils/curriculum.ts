@@ -65,6 +65,17 @@ export function getStudentTopics(grade?: string, field?: string): TopicMeta[] {
 }
 
 export function getTopicMeta(topicId: string): TopicMeta | undefined {
+  if (topicId.startsWith("custom::")) {
+    const parts = topicId.split("::");
+    const course = parts[1] || "Deneme";
+    const title = parts.slice(2).join("::") || parts[1] || "Özel Konu";
+    return {
+      id: topicId,
+      title,
+      course,
+      exam: "Deneme",
+    };
+  }
   return getAllTopics().find((t) => t.id === topicId);
 }
 

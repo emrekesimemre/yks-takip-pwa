@@ -27,6 +27,7 @@ import {
   getDenemeCourseDef,
 } from "@/data/denemeCourses";
 import { calculateNet } from "@/utils/deneme";
+import { findCurriculumMatch } from "@/utils/topicMatcher";
 
 type Props = {
   isOpen: boolean;
@@ -295,8 +296,15 @@ export default function UploadMockExamModal({
       type: examType,
       date: examDate,
       courses: Array.from(mergedCoursesMap.values()),
-      topics: topicsToSave
-        .map((t) => ({
+      topics: topicsToSave.map((t) => {
+        const match = t.matchedTopicId
+          ? { id: t.matchedTopicId, title: t.matchedTopicTitle }
+          : findCurriculumMatch(t.topicName, t.courseName || t.courseKey, grade, field);
+        const resolvedId =
+          match?.id ||
+          `custom::${(t.courseName || t.courseKey || "Deneme").replace(/::/g, "-")}::${t.topicName.replace(/::/g, "-")}`;
+        const resolvedTitle = match?.title || t.topicName;
+        return {
           courseKey: t.courseKey,
           courseName: t.courseName,
           topicName: t.topicName,
@@ -304,25 +312,32 @@ export default function UploadMockExamModal({
           correctCount: t.correctCount,
           wrongCount: t.wrongCount,
           emptyCount: t.emptyCount,
-          matchedTopicId: t.matchedTopicId,
-          matchedTopicTitle: t.matchedTopicTitle,
-        })),
+          matchedTopicId: resolvedId,
+          matchedTopicTitle: resolvedTitle,
+        };
+      }),
       wrongTopics: topicsToSave
-        .filter(
-          (t) =>
-            ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0),
-        )
-        .map((t) => ({
-          courseKey: t.courseKey,
-          courseName: t.courseName,
-          topicName: t.topicName,
-          questionCount: t.questionCount,
-          correctCount: t.correctCount,
-          wrongCount: t.wrongCount,
-          emptyCount: t.emptyCount,
-          matchedTopicId: t.matchedTopicId,
-          matchedTopicTitle: t.matchedTopicTitle,
-        })),
+        .filter((t) => (t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0)
+        .map((t) => {
+          const match = t.matchedTopicId
+            ? { id: t.matchedTopicId, title: t.matchedTopicTitle }
+            : findCurriculumMatch(t.topicName, t.courseName || t.courseKey, grade, field);
+          const resolvedId =
+            match?.id ||
+            `custom::${(t.courseName || t.courseKey || "Deneme").replace(/::/g, "-")}::${t.topicName.replace(/::/g, "-")}`;
+          const resolvedTitle = match?.title || t.topicName;
+          return {
+            courseKey: t.courseKey,
+            courseName: t.courseName,
+            topicName: t.topicName,
+            questionCount: t.questionCount,
+            correctCount: t.correctCount,
+            wrongCount: t.wrongCount,
+            emptyCount: t.emptyCount,
+            matchedTopicId: resolvedId,
+            matchedTopicTitle: resolvedTitle,
+          };
+        }),
     };
 
     if (addToPlan && onAddTopicsToPlan) {
@@ -330,14 +345,25 @@ export default function UploadMockExamModal({
         .filter(
           (t) =>
             t.selected !== false &&
-            t.matchedTopicId &&
-            ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0) &&
-            !weeklySelectedTopics?.includes(t.matchedTopicId),
+            ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0),
         )
-        .map((t) => t.matchedTopicId!);
+        .map((t) => {
+          if (t.matchedTopicId) return t.matchedTopicId;
+          const match = findCurriculumMatch(
+            t.topicName,
+            t.courseName || t.courseKey,
+            grade,
+            field,
+          );
+          return (
+            match?.id ||
+            `custom::${(t.courseName || t.courseKey || "Deneme").replace(/::/g, "-")}::${t.topicName.replace(/::/g, "-")}`
+          );
+        })
+        .filter((id) => !weeklySelectedTopics?.includes(id));
 
       if (idsToAdd.length > 0) {
-        onAddTopicsToPlan(idsToAdd);
+        onAddTopicsToPlan(Array.from(new Set(idsToAdd)));
       }
     }
 
@@ -353,13 +379,22 @@ export default function UploadMockExamModal({
   const totalEmpty = courses.reduce((s, c) => s + c.empty, 0);
   const totalNet = calculateNet(totalCorrect, totalWrong);
 
-  const unplannedWeakCount = wrongTopics.filter(
-    (t) =>
-      t.selected !== false &&
-      t.matchedTopicId &&
-      ((t.wrongCount || 0) > 0 || (t.emptyCount || 0) > 0) &&
-      !weeklySelectedTopics?.includes(t.matchedTopicId),
-  ).length;
+  const unplannedWeakCount = wrongTopics.filter((t) => {
+    if (t.selected === false) return false;
+    if ((t.wrongCount || 0) === 0 && (t.emptyCount || 0) === 0) return false;
+    const match = t.matchedTopicId
+      ? { id: t.matchedTopicId }
+      : findCurriculumMatch(
+          t.topicName,
+          t.courseName || t.courseKey,
+          grade,
+          field,
+        );
+    const resolvedId =
+      match?.id ||
+      `custom::${(t.courseName || t.courseKey || "Deneme").replace(/::/g, "-")}::${t.topicName.replace(/::/g, "-")}`;
+    return !weeklySelectedTopics?.includes(resolvedId);
+  }).length;
 
   if (!isOpen) return null;
 
@@ -851,13 +886,13 @@ export default function UploadMockExamModal({
                               <div
                                 key={originalIdx}
                                 onClick={() => toggleTopicSelected(originalIdx)}
-                                className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
+                                className={`flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 cursor-pointer transition-colors gap-1.5 sm:gap-2 ${
                                   topic.selected
                                     ? "bg-white"
                                     : "bg-slate-50/70 opacity-60"
                                 }`}
                               >
-                                <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                   {topic.selected ? (
                                     <FiCheckSquare className="text-indigo-600 text-sm shrink-0" />
                                   ) : (
@@ -865,10 +900,10 @@ export default function UploadMockExamModal({
                                   )}
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold">
+                                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold shrink-0">
                                         {topic.courseName}
                                       </span>
-                                      <span className="text-xs font-semibold text-slate-800 truncate">
+                                      <span className="text-xs font-semibold text-slate-800 break-words sm:truncate">
                                         {topic.topicName}
                                       </span>
                                     </div>
@@ -881,7 +916,7 @@ export default function UploadMockExamModal({
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                   {isFullCorrect && (
                                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-bold">
                                       ✓ {topic.correctCount} Doğru
@@ -891,9 +926,6 @@ export default function UploadMockExamModal({
                                     <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[10px] font-bold">
                                       {topic.wrongCount} Yanlış
                                     </span>
-                                  )}
-                                  {Boolean(
-                                    topic.emptyCount && topic.emptyCount > 0,
                                   )}
                                   {Boolean(
                                     topic.emptyCount && topic.emptyCount > 0,

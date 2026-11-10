@@ -73,7 +73,7 @@ export const createStudentSchema = z.object({
 
 export const patchStudentSchema = z.object({
   topics: z.array(topicProgressSchema).max(2000).optional(),
-  weeklySelectedTopics: z.array(z.string().min(1).max(80)).max(500).optional(),
+  weeklySelectedTopics: z.array(z.string().min(1).max(150)).max(500).optional(),
   solvedQuestionsByCourse: solvedMapSchema.optional(),
   solvedQuestionsByTopic: solvedMapSchema.optional(),
   weeklySolvedQuestionsByCourse: solvedMapSchema.optional(),
