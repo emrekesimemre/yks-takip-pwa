@@ -1,4 +1,5 @@
-import { masterCurriculum } from "@/data/subjects";
+import { getDenemeExamTypesForStudent } from "@/data/denemeCourses";
+import { getCurriculumForStudent } from "@/data/subjects";
 import { getPublicSiteUrl } from "@/lib/nextauth-url";
 import type { StaffRole } from "@/lib/staff";
 import type {
@@ -125,6 +126,8 @@ function formatNet(value: number | null) {
 
 export function developmentReportHtml(input: {
   studentName: string;
+  grade?: string;
+  field?: string;
   target?: string;
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
@@ -138,15 +141,24 @@ export function developmentReportHtml(input: {
     month: "long",
     year: "numeric",
   });
-  const overall = getOverallProgress(input.topics);
-  const tyt = getExamProgress("TYT", input.topics);
-  const ayt = getExamProgress("AYT", input.topics);
+  const overall = getOverallProgress(input.topics, input.grade, input.field);
+  const studentCurriculum = getCurriculumForStudent(input.grade, input.field);
+  const examSections = Object.keys(studentCurriculum);
+
+  const sectionStats = examSections.map((sec) => {
+    const prog = getExamProgress(sec, input.topics, input.grade, input.field);
+    return {
+      section: sec,
+      ...prog,
+    };
+  });
+
   const totalSolved = getTotalSolvedQuestions(
     input.solvedQuestionsByCourse,
     input.solvedQuestionsByTopic,
   );
-  const tytExams = input.mockExams.filter((exam) => exam.type === "TYT");
-  const aytExams = input.mockExams.filter((exam) => exam.type === "AYT");
+
+  const availableTypes = getDenemeExamTypesForStudent(input.grade, input.field);
   const weakest = getWeakestCourses(analyzeByCourse(input.mockExams));
   const schoolGradeRows = input.schoolGrades
     .slice()
@@ -166,14 +178,16 @@ export function developmentReportHtml(input: {
     )
     .join("");
 
-  const courseRows = (["TYT", "AYT"] as const)
+  const courseRows = examSections
     .flatMap((exam) =>
-      Object.keys(masterCurriculum[exam]).map((course) => {
+      Object.keys(studentCurriculum[exam] || {}).map((course) => {
         const count = getCourseSolvedCount(
           input.solvedQuestionsByCourse,
           exam,
           course,
           input.solvedQuestionsByTopic,
+          input.grade,
+          input.field,
         );
         if (count === 0) return "";
         return `<tr>
@@ -184,12 +198,39 @@ export function developmentReportHtml(input: {
     )
     .join("");
 
+  const examSummaryRows = availableTypes
+    .map((t) => {
+      const matching = input.mockExams.filter((e) => e.type === t.type);
+      if (matching.length === 0) return "";
+      return `<p style="margin:0 0 6px;">${escapeHtml(t.label)}: ${matching.length} deneme, ortalama ${formatNet(avgNet(matching))} net, son ${formatNet(lastNet(matching))} net</p>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  const denemeSummaryHtml =
+    examSummaryRows ||
+    (input.mockExams.length > 0
+      ? `<p style="margin:0 0 6px;">Denemeler: ${input.mockExams.length} deneme, ortalama ${formatNet(avgNet(input.mockExams))} net, son ${formatNet(lastNet(input.mockExams))} net</p>`
+      : `<p style="margin:0 0 6px;color:#64748b;">Henüz deneme kaydı girilmemiş.</p>`);
+
   const weakestText =
     weakest.length === 0
       ? "Deneme kaydı yok."
       : weakest
           .map((course) => `${course.courseName} (${course.avgNet} net)`)
           .join(", ");
+
+  const sectionCardsHtml = sectionStats
+    .map(
+      (sec) => `
+        <td style="width:${Math.floor(100 / (sectionStats.length + 1))}%;padding:12px;background:#f8fafc;border-radius:10px;">
+          <p style="margin:0;font-size:12px;color:#64748b;">${escapeHtml(sec.section)}</p>
+          <p style="margin:4px 0 0;font-size:22px;font-weight:bold;">%${sec.percentage}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#64748b;">${sec.completed}/${sec.total}</p>
+        </td>
+      `,
+    )
+    .join('<td style="width:8px;"></td>');
 
   return emailShell(`
     <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#4f46e5;">Veli Gelişim Raporu</p>
@@ -199,22 +240,12 @@ export function developmentReportHtml(input: {
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       <tr>
-        <td style="width:33%;padding:12px;background:#f8fafc;border-radius:10px;">
+        <td style="width:${Math.floor(100 / (sectionStats.length + 1))}%;padding:12px;background:#f8fafc;border-radius:10px;">
           <p style="margin:0;font-size:12px;color:#64748b;">Genel ilerleme</p>
           <p style="margin:4px 0 0;font-size:22px;font-weight:bold;">%${overall}</p>
         </td>
         <td style="width:8px;"></td>
-        <td style="width:33%;padding:12px;background:#f8fafc;border-radius:10px;">
-          <p style="margin:0;font-size:12px;color:#64748b;">TYT konular</p>
-          <p style="margin:4px 0 0;font-size:22px;font-weight:bold;">%${tyt.percentage}</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#64748b;">${tyt.completed}/${tyt.total}</p>
-        </td>
-        <td style="width:8px;"></td>
-        <td style="width:33%;padding:12px;background:#f8fafc;border-radius:10px;">
-          <p style="margin:0;font-size:12px;color:#64748b;">AYT konular</p>
-          <p style="margin:4px 0 0;font-size:22px;font-weight:bold;">%${ayt.percentage}</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#64748b;">${ayt.completed}/${ayt.total}</p>
-        </td>
+        ${sectionCardsHtml}
       </tr>
     </table>
     <h2 style="margin:0 0 8px;font-size:16px;">Çözülen sorular</h2>
@@ -225,8 +256,7 @@ export function developmentReportHtml(input: {
         : `<p style="margin:0 0 20px;color:#64748b;">Henüz soru kaydı girilmemiş.</p>`
     }
     <h2 style="margin:0 0 8px;font-size:16px;">Deneme özeti</h2>
-    <p style="margin:0 0 6px;">TYT: ${tytExams.length} deneme, ortalama ${formatNet(avgNet(tytExams))} net, son ${formatNet(lastNet(tytExams))} net</p>
-    <p style="margin:0 0 12px;">AYT: ${aytExams.length} deneme, ortalama ${formatNet(avgNet(aytExams))} net, son ${formatNet(lastNet(aytExams))} net</p>
+    ${denemeSummaryHtml}
     <p style="margin:0 0 20px;">En zayıf dersler: ${escapeHtml(weakestText)}</p>
     <h2 style="margin:0 0 8px;font-size:16px;">Okul notları</h2>
     ${

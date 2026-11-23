@@ -2,9 +2,20 @@ import { getCurriculumForStudent } from "@/data/subjects";
 import type { TopicProgress } from "@/store/useStudentStore";
 import { isTopicCompleted } from "@/utils/curriculum";
 
-/** YKS hazırlık dönemindeki bir sonraki 31 Mart hedef tarihi */
-export function getPacingTargetDate(from: Date = new Date()): Date {
+/** YKS / Okul hazırlık dönemindeki hedef tarihi:
+ * 9, 10 ve 11. sınıflar için bir sonraki 15 Haziran (okul kapanışı).
+ * 12 ve mezun (YKS) için bir sonraki 31 Mart (konuları bitirme hedefi).
+ */
+export function getPacingTargetDate(from: Date = new Date(), grade?: string): Date {
   const year = from.getFullYear();
+  if (grade === "9" || grade === "10" || grade === "11") {
+    const juneEnd = new Date(year, 5, 15, 23, 59, 59, 999);
+    if (from.getTime() <= juneEnd.getTime()) {
+      return juneEnd;
+    }
+    return new Date(year + 1, 5, 15, 23, 59, 59, 999);
+  }
+
   const marchEnd = new Date(year, 2, 31, 23, 59, 59, 999);
   if (from.getTime() <= marchEnd.getTime()) {
     return marchEnd;
@@ -53,11 +64,12 @@ export function getPacingWarnings(
   topics: TopicProgress[],
   weeklySelectedTopics: string[],
   from: Date = new Date(),
-  targetDate: Date = getPacingTargetDate(from),
+  targetDate?: Date,
   grade?: string,
   field?: string,
 ): PacingWarning[] {
-  const weeksRemaining = getWeeksRemaining(from, targetDate);
+  const effectiveTargetDate = targetDate ?? getPacingTargetDate(from, grade);
+  const weeksRemaining = getWeeksRemaining(from, effectiveTargetDate);
   const warnings: PacingWarning[] = [];
   const studentCurriculum = getCurriculumForStudent(grade, field);
 
@@ -87,7 +99,7 @@ export function getPacingWarnings(
           selectedThisWeek,
           deficit,
           weeksRemaining,
-          targetDate,
+          targetDate: effectiveTargetDate,
         });
       }
     });

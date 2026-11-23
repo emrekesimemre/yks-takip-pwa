@@ -355,87 +355,6 @@ export const masterCurriculum: Curriculum = {
 };
 
 
-// MEB 9. Sınıf Müfredatı
-export const grade9Curriculum: Course = {
-  "Türk Dili ve Edebiyatı": topics("g9-tur", [
-    "Okuma ve Anlama",
-    "Dil Bilgisi Genel Konular",
-    "Ses, Yazım ve Noktalama",
-    "Giriş (Edebiyat, Dil, İletişim)",
-    "Hikâye (Olay ve Durum Hikâyesi)",
-    "Şiir (Nazım Birimi, Ölçü, Kafiye, Söz Sanatları)",
-    "Masal ve Fabl",
-    "Roman (Yapı Unsurları, Anlatıcı ve Bakış Açısı)",
-    "Tiyatro (Trajedi, Komedi, Dram)",
-    "Biyografi ve Otobiyografi",
-    "Mektup ve E-Posta",
-    "Günlük ve Blog",
-  ]),
-  Matematik: topics("g9-mat", [
-    "Mantık ve Önermeler",
-    "Kümeler ve Küme İşlemleri",
-    "Bölünebilme Kuralları ve EBOB-EKOK",
-    "Birinci Dereceden Denklem ve Eşitsizlikler",
-    "Mutlak Değer",
-    "Üslü ve Köklü Sayılar",
-    "Oran ve Orantı",
-    "Problemler (Sayı, Kesir, Yaş, İşçi, Yüzde, Hareket)",
-    "Üçgende Açılar ve Açı-Kenar Bağıntıları",
-    "Üçgende Eşlik ve Benzerlik",
-    "Üçgenin Yardımcı Elemanları (Açıortay, Kenarortay, Yükseklik)",
-    "Dik Üçgen ve Trigonometriye Giriş",
-    "Üçgende Alan",
-    "Veri ve İstatistik",
-  ]),
-  Fizik: topics("g9-fiz", [
-    "Fizik Bilimine Giriş",
-    "Madde ve Özellikleri (Özkütle, Dayanıklılık, Adezyon-Kohezyon)",
-    "Hareket ve Kuvvet (Konum, Hız, İvme, Newton Kanunları)",
-    "İş, Güç ve Enerji (Mekanik Enerjinin Korunumu)",
-    "Isı ve Sıcaklık (Termometreler, Özısı, Isıl Denge)",
-    "Elektrostatik (Elektrik Yükleri, Coulomb Kuvveti)",
-  ]),
-  Kimya: topics("g9-kim", [
-    "Kimya Bilimi (Simyadan Kimyaya, Güvenlik Kuralları)",
-    "Atom ve Periyodik Sistem (Modeller, Periyodik Özellikler)",
-    "Kimyasal Türler Arası Etkileşimler (İyonik, Kovalent, Metalik, Zayıf Etkileşim)",
-    "Maddenin Halleri (Katılar, Sıvılar, Gazlar, Plazma)",
-    "Doğa ve Kimya (Su, Hayat, Çevre Kimyası)",
-  ]),
-  Biyoloji: topics("g9-biy", [
-    "Yaşam Bilimi Biyoloji (Canlıların Ortak Özellikleri)",
-    "Canlıların Temel Bileşenleri (Organik ve İnorganik Maddeler)",
-    "Enzimler, Nükleik Asitler ve ATP (Enerji)",
-    "Hücrenin Yapısı ve Organeller",
-    "Hücre Zarı ve Madde Geçişleri",
-    "Canlılar Dünyası ve Canlıların Sınıflandırılması",
-  ]),
-  Tarih: topics("g9-tar", [
-    "Tarih ve Zaman",
-    "İnsanlığın İlk Dönemleri",
-    "Orta Çağ'da Dünya",
-    "İlk ve Orta Çağlarda Türk Dünyası",
-    "İslam Medeniyetinin Doğuşu",
-    "Türklerin İslamiyet'i Kabulü ve İlk Türk İslam Devletleri",
-  ]),
-  Coğrafya: topics("g9-cog", [
-    "Doğal Sistemler: Coğrafyanın Doğası (Doğa ve İnsan Etkileşimi)",
-    "Coğrafi Konum ve Koordinat Sistemi",
-    "Mekânsal Bilgi Teknolojileri (Harita Bilgisi ve Ölçekler)",
-    "Dünyanın Şekli ve Hareketleri",
-    "İklim Elemanları (Sıcaklık, Basınç, Rüzgar, Nem)",
-    "Türkiye'nin İklimi ve Bitki Örtüsü",
-    "Yerleşme ve Nüfus",
-  ]),
-  "Din Kültürü": topics("g9-din", [
-    "Bilgi ve İnanç",
-    "Din ve İslam",
-    "İslam ve İbadet",
-    "Gençlik ve Değerler",
-    "Gönül Coğrafyamız",
-  ]),
-};
-
 export const grade9EnglishTopics = topics("g9-ing", [
   "Studying Abroad",
   "My Environment",
@@ -447,98 +366,205 @@ export const grade9EnglishTopics = topics("g9-ing", [
   "Emergency and Health",
 ]);
 
-// MEB 10. Sınıf Müfredatı
+// MEB 9. Sınıf Müfredatı (TYMM - Türkiye Yüzyılı Maarif Modeli)
+export const grade9Curriculum: Course = {
+  "Türk Dili ve Edebiyatı": topics("g9-tur", [
+    "Sözün İnceliği: Edebiyat ve Güzel Sanatlar",
+    "Sözün İnceliği: Şiir İncelemesi ve Ahenk Unsurları",
+    "Sözün İnceliği: Söz Sanatları",
+    "Anlam Arayışı: Hikâye İncelemesi ve Yapı Unsurları",
+    "Anlam Arayışı: Roman İncelemesi ve Anlatım Teknikleri",
+    "Anlamın Yapı Taşları: Bilgilendirici Metinler (Makale, Deneme, Eleştiri)",
+    "Dilin Zenginliği: Söz Varlığı, Deyimler ve Atasözleri",
+    "Dil Bilgisi: Ses Bilgisi, Yazım Kuralları ve Noktalama",
+  ]),
+  Matematik: topics("g9-mat", [
+    "Sayılar: Gerçek Sayılar ve Aralık Kavramı",
+    "Sayılar: Üslü ve Köklü İfadeler",
+    "Sayılar: Küme İşlemleri",
+    "Nicelikler ve Değişimler: Doğrusal İlişkiler ve Fonksiyon Kavramı",
+    "Nicelikler ve Değişimler: Doğrusal Denklem ve Eşitsizlikler",
+    "Nicelikler ve Değişimler: Mutlak Değer Fonksiyonu",
+    "Geometrik Şekiller: Üçgende Açı ve Kenar Özellikleri",
+    "Geometrik Şekiller: Üçgende Eşlik ve Benzerlik",
+    "Geometrik Nicelikler: Üçgende Yardımcı Elemanlar",
+    "Geometrik Nicelikler: Üçgende Alan İlişkileri",
+    "İstatistiksel Araştırma Süreci: Veri Toplama ve Görselleştirme",
+    "İstatistiksel Araştırma Süreci: Merkezi Eğilim ve Yayılım Ölçüleri",
+    "Veriden Olasılığa: Deneysel ve Teorik Olasılık",
+  ]),
+  Fizik: topics("g9-fiz", [
+    "Fizik Bilimi ve Kariyer Keşfi: Alt Dallar ve Araştırma Merkezleri",
+    "Kuvvet ve Hareket: Temel-Türetilmiş Büyüklükler ve Vektörler",
+    "Kuvvet ve Hareket: Doğrusal Hareket ve İvme",
+    "Akışkanlar: Katı, Sıvı ve Gaz Basıncı",
+    "Akışkanlar: Kaldırma Kuvveti ve Bernoulli İlkesi",
+    "Enerji: Isı, Sıcaklık ve İç Enerji",
+    "Enerji: Isı İletim Yolları ve Isıl Denge",
+  ]),
+  Kimya: topics("g9-kim", [
+    "Etkileşim: Kimya Bilimi ve Laboratuvar Güvenliği",
+    "Etkileşim: Atom Modelleri ve Atomun Yapısı",
+    "Etkileşim: Periyodik Sistem ve Periyodik Özellikler",
+    "Etkileşim: Kimyasal Türler Arası Etkileşimler",
+    "Çeşitlilik: Maddenin Halleri ve Hâl Değişimleri",
+    "Çeşitlilik: Sıvılar ve Gazların Temel Özellikleri",
+    "Sürdürülebilirlik: Yeşil Kimya, Atıklar ve Çevre",
+  ]),
+  Biyoloji: topics("g9-biy", [
+    "Yaşam: Biyolojinin Önemi ve Bilimsel Yöntem",
+    "Yaşam: Canlıların Ortak Özellikleri",
+    "Yaşam: İnorganik Moleküller (Su ve Mineraller)",
+    "Yaşam: Organik Moleküller (Karbonhidrat, Lipit, Protein)",
+    "Yaşam: Enzimler, Nükleik Asitler ve Vitaminler",
+    "Organizasyon: Hücrenin Yapısı ve Organeller",
+    "Organizasyon: Hücre Zarından Madde Geçişleri",
+    "Organizasyon: Canlıların Sınıflandırılması ve Üç Üst Âlem",
+    "Organizasyon: Biyoçeşitlilik ve Korunması",
+  ]),
+  Tarih: topics("g9-tar", [
+    "Geçmişin İnşa Sürecinde Tarih: Tarih Bilimi ve Yöntemi",
+    "Geçmişin İnşa Sürecinde Tarih: Zaman, Takvim ve Kaynak Kullanımı",
+    "Eski Çağ Medeniyetleri: Tarım Devrimi ve İlk Yerleşimler",
+    "Eski Çağ Medeniyetleri: Mezopotamya, Anadolu ve Mısır",
+    "Eski Çağ Medeniyetleri: Yunan ve Türkistan Medeniyetleri",
+    "Orta Çağ Medeniyetleri: Siyasi Yapılar ve Ticaret Yolları",
+    "Orta Çağ Medeniyetleri: Bilim, Kültür ve Sanat Merkezleri",
+  ]),
+  Coğrafya: topics("g9-cog", [
+    "Coğrafyanın Doğası: Coğrafyanın Bölümleri ve CBS",
+    "Mekânsal Bilgi Teknolojileri: Koordinat Sistemi, Ölçek ve Harita",
+    "Doğal Sistemler ve Süreçler: İklim Elemanları ve İklim Tipleri",
+    "Doğal Sistemler ve Süreçler: Türkiye'nin İklimi ve Bitki Örtüsü",
+    "Beşerî Sistemler ve Süreçler: Nüfus Piramitleri, Dağılış ve Göçler",
+    "Ekonomik Faaliyetler ve Etkileri",
+    "Afetler ve Sürdürülebilir Çevre: Doğal Afetler ve Afet Yönetimi",
+  ]),
+  "Din Kültürü": topics("g9-din", [
+    "Allah-İnsan İlişkisi",
+    "İslam'da İnanç Esasları",
+    "İslam'da İbadetler",
+    "İslam'da Değerler",
+    "Gönül Coğrafyamız ve İslam Medeniyeti",
+  ]),
+  İngilizce: grade9EnglishTopics,
+};
+
+// MEB 10. Sınıf Müfredatı (TYMM - Türkiye Yüzyılı Maarif Modeli)
 export const grade10Curriculum: Course = {
   "Türk Dili ve Edebiyatı": topics("g10-tur", [
-    "Okuma ve Anlama",
-    "Dil Bilgisi Genel Konular",
-    "Ses, Yazım ve Noktalama",
-    "Giriş (Türkçenin Tarihi Gelişimi)",
-    "Hikâye (Dede Korkut, Halk Hikâyesi, Tanzimat)",
-    "Şiir (İslamiyet Öncesi, Divan ve Halk Şiiri)",
-    "Destan ve Efsane",
-    "Roman (Tanzimat, Servetifünun, Milli Edebiyat)",
-    "Tiyatro (Geleneksel ve Modern Tiyatro)",
-    "Anı (Hatıra)",
-    "Haber Metni",
-    "Gezi Yazısı",
+    "Sözün Ezgisi: İslamiyet Öncesi ve Halk Şiiri Geleneği",
+    "Sözün Ezgisi: Divan Şiiri Geleneği",
+    "Kelimelerin Ritmi: Nazım Biçimleri ve Türleri",
+    "Dünden Bugüne: Destan, Efsane ve Halk Hikâyesi",
+    "Dünden Bugüne: Mesnevi Geleneği",
+    "Neslin Mirası: Dede Korkut Hikâyeleri ve Seyahatname",
+    "Dil Bilgisi: Sözcük Yapısı, Sözcük Türleri ve Fiilimsiler",
   ]),
   Matematik: topics("g10-mat", [
-    "Sıralama ve Sayma (Permütasyon, Kombinasyon)",
-    "Binom Açılımı ve Olasılık",
-    "Fonksiyon Kavramı ve Gösterimi",
-    "Bileşke ve Ters Fonksiyon",
-    "Polinom Kavramı ve Polinomlarda İşlemler",
-    "Çarpanlara Ayırma",
-    "İkinci Dereceden Bir Bilinmeyenli Denklemler",
-    "Karmaşık Sayılar",
-    "Çokgenler ve Dörtgenler",
-    "Özel Dörtgenler (Paralelkenar, Eşkenar Dörtgen, Dikdörtgen, Kare, Deltoid, Yamuk)",
-    "Katı Cisimler (Prizmalar ve Piramitler)",
+    "Sayılar: Sayma Yöntemleri ve Permütasyon",
+    "Sayılar: Kombinasyon ve Binom Açılımı",
+    "Nicelikler ve Değişimler: İkinci Dereceden Fonksiyonlar (Parabol)",
+    "Nicelikler ve Değişimler: İkinci Dereceden Denklem ve Eşitsizlikler",
+    "Geometrik Şekiller: Çokgenler ve Dörtgenler",
+    "Geometrik Şekiller: Özel Dörtgenler (Paralelkenar, Eşkenar Dörtgen, Dikdörtgen, Kare, Yamuk)",
+    "Geometrik Nicelikler: Dörtgenlerde Uzunluk ve Alan İlişkileri",
+    "Geometrik Nicelikler: Katı Cisimler (Prizma ve Piramit)",
+    "İstatistiksel Araştırma Süreci: İki Değişkenli Veri Analizi",
+    "Veriden Olasılığa: Koşullu Olasılık ve Bağımsız Olaylar",
   ]),
   Fizik: topics("g10-fiz", [
-    "Elektrik Akımı, Direnç ve Ohm Kanunu",
-    "Elektrik Devreleri ve Elektriksel Güç",
-    "Mıknatıslar ve Manyetik Alan",
-    "Katı, Sıvı ve Gaz Basıncı",
-    "Sıvıların Kaldırma Kuvveti",
-    "Dalgalar (Yay, Su, Ses ve Deprem)",
-    "Optik (Aydınlanma, Düzlem ve Küresel Aynalar)",
-    "Optik (Kırılma, Mercekler, Prizmalar ve Renk)",
+    "Kuvvet ve Hareket: Newton'ın Hareket Yasaları ve Sürtünme Kuvveti",
+    "Kuvvet ve Hareket: Dairesel Hareket Temelleri",
+    "Enerji: İş, Güç ve Mekanik Enerjinin Korunumu",
+    "Elektrik ve Manyetizma: Elektrik Akımı, Direnç ve Devreler",
+    "Elektrik ve Manyetizma: Mıknatıslar ve Manyetik Alan",
+    "Dalgalar: Temel Dalga Kavramları, Yay ve Su Dalgaları",
+    "Dalgalar: Ses ve Deprem Dalgaları",
   ]),
   Kimya: topics("g10-kim", [
-    "Kimyanın Temel Kanunları (Kütle Korunumu, Sabit ve Katlı Oranlar)",
-    "Mol Kavramı",
-    "Kimyasal Tepkimeler ve Hesaplamalar",
-    "Karışımlar ve Sınıflandırılması",
-    "Çözünürlük ve Çözelti Derişimleri",
-    "Karışımları Ayırma Yöntemleri",
-    "Asitler, Bazlar ve Tuzlar",
-    "Kimya Her Yerde (Temizlik, Polimer, İlaç, Kozmetik)",
+    "Etkileşim: Kimyanın Temel Kanunları",
+    "Etkileşim: Mol Kavramı",
+    "Etkileşim: Kimyasal Tepkimeler ve Hesaplamalar",
+    "Çeşitlilik: Karışımlar ve Çözelti Derişimleri",
+    "Çeşitlilik: Karışımları Ayırma Teknikleri",
+    "Sürdürülebilirlik: Asitler, Bazlar ve Tuzlar",
+    "Sürdürülebilirlik: Endüstriyel Kimya ve Polimerler",
   ]),
   Biyoloji: topics("g10-biy", [
-    "Mitoz Bölünme ve Eşeysiz Üreme",
-    "Mayoz Bölünme ve Eşeyli Üreme",
-    "Kalıtımın Genel İlkeleri (Mendel Genetiği)",
-    "Kan Grupları ve Cinsiyete Bağlı Kalıtım",
-    "Soyağaçları ve Genetik Varyasyonlar",
-    "Ekosistem Ekolojisi ve Madde Döngüleri",
-    "Güncel Çevre Sorunları ve Biyolojik Çeşitlilik",
+    "Enerji: ATP ve Hücresel Solunum (Oksijenli / Oksijensiz)",
+    "Enerji: Fermantasyon",
+    "Enerji: Fotosentez ve Kemosentez",
+    "Ekoloji: Ekosistem Ekolojisi ve Besin Ağları",
+    "Ekoloji: Madde Döngüleri ve Enerji Akışı",
+    "Ekoloji: Sürdürülebilirlik ve Biyoçeşitliliğin Korunması",
   ]),
   Tarih: topics("g10-tar", [
-    "Türkistan'dan Türkiye'ye (1040-1299) - Selçuklu Türkiyesi",
-    "Beylikten Devlete Osmanlı Siyaseti (1302-1453)",
-    "Devletleşme Sürecinde Savaşçılar ve Askerler",
-    "Beylikten Devlete Osmanlı Medeniyeti",
-    "Dünya Gücü Osmanlı (1453-1595)",
-    "Sultan ve Osmanlı Merkez Teşkilatı",
-    "Klasik Çağda Osmanlı Toplum Düzeni",
+    "Türkistan'dan Türkiye'ye: İlk Türk-İslam Devletleri",
+    "Türkistan'dan Türkiye'ye: Türkiye Selçuklu Devleti ve Anadolu'nun Türkleşmesi",
+    "Beylikten Devlete Osmanlı: Kuruluş Dönemi Siyaset ve Askerî Yapı",
+    "Beylikten Devlete Osmanlı: Toplum ve Medeniyet",
+    "Cihan Devleti Osmanlı: Fetihler ve Siyasi Güç (1453-1595)",
+    "Cihan Devleti Osmanlı: Merkez Teşkilatı ve Klasik Çağ Toplum Düzeni",
   ]),
   Coğrafya: topics("g10-cog", [
-    "Doğal Sistemler: Coğrafyanın Doğası ve Levha Tektoniği (İç Kuvvetler)",
-    "Dış Kuvvetler (Akarsu, Rüzgâr, Buzul, Dalgalar)",
-    "Türkiye'de Su, Toprak ve Bitki Varlığı",
-    "Nüfusun Gelişimi, Dağılışı ve Nüfus Piramitleri",
-    "Göçler ve Göçlerin Mekânsal Etkileri",
-    "Ekonomik Faaliyetlerin Sınıflandırılması",
-    "Uluslararası Ulaşım Hatları ve Doğal Afetler",
+    "Doğal Sistemler ve Süreçler: Levha Tektoniği ve İç Kuvvetler",
+    "Doğal Sistemler ve Süreçler: Dış Kuvvetler ve Türkiye'nin Yer Şekilleri",
+    "Doğal Sistemler ve Süreçler: Türkiye'nin Su, Toprak ve Bitki Varlığı",
+    "Beşerî Sistemler ve Süreçler: Yerleşme Tipleri ve Türkiye'de Yerleşme",
+    "Beşerî Sistemler ve Süreçler: Nüfus Politikaları",
+    "Ekonomik Faaliyetler ve Etkileri: Ekonomik Sektörler ve Ulaşım Ağları",
+    "Afetler ve Sürdürülebilir Çevre: Tektonik ve Klimatik Afetler",
   ]),
   Felsefe: topics("g10-fel", [
-    "Felsefenin Doğası ve Akıl Yürütme (Felsefeyi Tanıma)",
-    "Felsefe, Mantık ve Argümantasyon",
-    "Varlık Felsefesi (Ontoloji)",
-    "Bilgi Felsefesi (Epistemoloji)",
-    "Ahlak ve Siyaset Felsefesi",
+    "Felsefenin Doğası ve Düşünme Yöntemleri",
+    "Varlık Felsefesi (Ontoloji) ve Bilgi Felsefesi (Epistemoloji)",
+    "Bilim, Ahlak ve Siyaset Felsefesi",
     "Sanat ve Din Felsefesi",
-    "Felsefi Okuma ve Yazma",
   ]),
   "Din Kültürü": topics("g10-din", [
-    "İslam'da Varlık ve Bilgi / Allah İnancı ve İnsan",
+    "İslam'da Varlık ve Bilgi",
     "Hz. Muhammed ve Gençlik",
-    "Din ve Hayat",
-    "Ahlaki Tutum ve Davranışlar",
-    "İslam Düşüncesinde Yorumlar (Mezhepler)",
+    "Din, Hayat ve Ahlak",
+    "İslam Düşüncesinde Yorumlar",
   ]),
+};
+
+// 2028 YKS (TYMM) kuşağı TYT Müfredatı (9 ve 10. sınıf birleşimi)
+export const tymmTytCurriculum: Course = {
+  "Türk Dili ve Edebiyatı": [
+    ...grade9Curriculum["Türk Dili ve Edebiyatı"],
+    ...grade10Curriculum["Türk Dili ve Edebiyatı"],
+  ],
+  Matematik: [
+    ...grade9Curriculum.Matematik,
+    ...grade10Curriculum.Matematik,
+  ],
+  Fizik: [
+    ...grade9Curriculum.Fizik,
+    ...grade10Curriculum.Fizik,
+  ],
+  Kimya: [
+    ...grade9Curriculum.Kimya,
+    ...grade10Curriculum.Kimya,
+  ],
+  Biyoloji: [
+    ...grade9Curriculum.Biyoloji,
+    ...grade10Curriculum.Biyoloji,
+  ],
+  Tarih: [
+    ...grade9Curriculum.Tarih,
+    ...grade10Curriculum.Tarih,
+  ],
+  Coğrafya: [
+    ...grade9Curriculum.Coğrafya,
+    ...grade10Curriculum.Coğrafya,
+  ],
+  Felsefe: grade10Curriculum.Felsefe,
+  "Din Kültürü": [
+    ...grade9Curriculum["Din Kültürü"],
+    ...grade10Curriculum["Din Kültürü"],
+  ],
 };
 
 // 11. Sınıflar İçin Ortak Dersler (Zorunlu)
@@ -559,76 +585,62 @@ const grade11Common = {
   ]),
 };
 
-// MEB 11. Sınıf Sayısal Müfredatı
+// MEB 11. Sınıf Sayısal Müfredatı (TYMM - Türkiye Yüzyılı Maarif Modeli)
 export const grade11SayisalCurriculum: Course = {
   ...grade11Common,
   Matematik: topics("g11-mat", [
-    "Yönlü Açılar ve Trigonometrik Fonksiyonlar",
-    "Trigonometrik Bağıntılar ve Teoremler",
-    "Doğrunun Analitik İncelenmesi",
-    "Fonksiyonların Dönüşümleri ve İkinci Dereceden Fonksiyonlar",
-    "İkinci Dereceden İki Bilinmeyenli Denklem Sistemleri",
-    "İkinci Dereceden Eşitsizlikler ve Eşitsizlik Sistemleri",
-    "Çemberde Açılar ve Teğet-Kiriş Özellikleri",
-    "Dairede Çevre ve Alan",
-    "Uzay Geometri (Küre ve Koni)",
-    "Koşullu Olasılık ve Bağımsız Olaylar",
+    "Sayılar: Karmaşık Sayılar",
+    "Sayılar: Polinomlar ve Çarpanlara Ayırma",
+    "Nicelikler ve Değişimler: Trigonometrik Fonksiyonlar ve Teoremler",
+    "Nicelikler ve Değişimler: Üstel ve Logaritmik Fonksiyonlar",
+    "Geometrik Şekiller: Çemberde Açılar, Teğet ve Kiriş",
+    "Geometrik Nicelikler: Dairede Çevre ve Alan",
+    "Geometrik Nicelikler: Analitik Geometri (Nokta ve Doğru)",
+    "İstatistik ve Olasılık: Koşullu Olasılık Uygulamaları",
   ]),
   Fizik: topics("g11-fiz", [
-    "Vektörler ve Bağıl Hareket",
-    "Newton'ın Hareket Yasaları",
-    "Bir Boyutta Sabit İvmeli Hareket",
-    "İki Boyutta Hareket (Atışlar)",
-    "İş, Güç ve Enerji",
-    "İtme ve Çizgisel Momentum",
-    "Tork, Denge ve Kütle Merkezi",
-    "Basit Makineler",
-    "Elektriksel Kuvvet ve Potansiyel",
-    "Düzgün Elektrik Alan ve Sığa (Kapasitör)",
-    "Manyetizma ve Elektromanyetik İndüksiyon",
-    "Alternatif Akım ve Transformatörler",
+    "Kuvvet ve Hareket: Vektörler ve Bağıl Hareket",
+    "Kuvvet ve Hareket: İki Boyutta Hareket (Atışlar)",
+    "Kuvvet ve Hareket: İtme ve Çizgisel Momentum",
+    "Kuvvet ve Hareket: Tork, Denge ve Kütle Merkezi",
+    "Elektrik ve Manyetizma: Elektriksel Kuvvet, Alan, Potansiyel ve Sığa",
+    "Elektrik ve Manyetizma: Manyetik Alan ve Elektromanyetik İndüksiyon",
+    "Elektrik ve Manyetizma: Alternatif Akım ve Transformatörler",
+    "Optik: Aydınlanma, Yansıma ve Aynalar",
+    "Optik: Kırılma, Mercekler ve Renk",
   ]),
   Kimya: topics("g11-kim", [
-    "Modern Atom Teorisi ve Kuantum Sayıları",
-    "Periyodik Özellikler",
-    "Gaz Yasaları ve İdeal Gaz Denklemi",
-    "Gazlarda Kinetik Teori ve Gerçek Gazlar",
-    "Sıvı Çözeltiler ve Derişim Birimleri",
-    "Koligatif Özellikler ve Çözünürlük",
-    "Kimyasal Tepkimelerde Enerji ve Entalpi",
-    "Kimyasal Tepkimelerde Hız",
-    "Kimyasal Denge ve Dengeyi Etkileyen Faktörler",
-    "Asit-Baz Dengesi ve pH Hesaplamaları",
-    "Çözünürlük Dengesi (KÇÇ)",
+    "Etkileşim: Modern Atom Teorisi ve Kuantum Sayıları",
+    "Etkileşim: Periyodik Özellikler",
+    "Çeşitlilik: Gaz Yasaları, İdeal ve Gerçek Gazlar",
+    "Çeşitlilik: Sıvı Çözeltiler ve Koligatif Özellikler",
+    "Tepkimeler ve Denge: Kimyasal Tepkimelerde Enerji (Entalpi)",
+    "Tepkimeler ve Denge: Kimyasal Tepkimelerde Hız",
+    "Tepkimeler ve Denge: Kimyasal Denge",
+    "Tepkimeler ve Denge: Asit-Baz ve Çözünürlük Dengesi",
   ]),
   Biyoloji: topics("g11-biy", [
-    "Denetleyici ve Düzenleyici Sistem (Sinir ve Endokrin Sistem)",
-    "Duyu Organları",
-    "Destek ve Hareket Sistemi",
-    "Sindirim Sistemi",
-    "Dolaşım ve Bağışıklık Sistemi",
-    "Solunum Sistemi",
-    "Boşaltım (Üriner) Sistemi",
-    "Üreme Sistemi ve Embriyonik Gelişim",
-    "Komünite Ekolojisi",
-    "Popülasyon Ekolojisi",
+    "Hücre Bölünmeleri ve Kalıtım: Mitoz, Mayoz ve Üreme",
+    "Hücre Bölünmeleri ve Kalıtım: Mendel Genetiği ve Soyağaçları",
+    "Sistemler ve Homeostazi: Sinir Sistemi ve Endokrin Sistem",
+    "Sistemler ve Homeostazi: Duyu Organları ve Destek-Hareket Sistemi",
+    "Sistemler ve Homeostazi: Sindirim ve Dolaşım Sistemleri",
+    "Sistemler ve Homeostazi: Bağışıklık, Solunum ve Boşaltım Sistemleri",
+    "Sistemler ve Homeostazi: Üreme Sistemi ve Embriyonik Gelişim",
   ]),
   "Türk Dili ve Edebiyatı": topics("g11-tur", [
-    "Giriş (Edebiyat ve Toplum)",
-    "Hikâye (Tanzimat'tan Cumhuriyete)",
-    "Şiir (Tanzimat, Servetifünun, Fecriati, Milli Edebiyat)",
-    "Makale, Sohbet ve Fıkra",
-    "Roman (Milli Edebiyat ve Cumhuriyet Dönemi)",
-    "Tiyatro (Cumhuriyet Dönemi)",
-    "Eleştiri ve Mülakat/Röportaj",
+    "Toplum ve Edebiyat: Tanzimat Dönemi Hikâye ve Romanı",
+    "Toplum ve Edebiyat: Servetifünun Dönemi Hikâye ve Romanı",
+    "Yenileşme Dönemi Şiiri: Tanzimat, Servetifünun ve Fecriati Şiiri",
+    "Yenileşme Dönemi Şiiri: Millî Edebiyat Şiiri",
+    "Düşünce ve Eleştiri Metinleri: Makale, Sohbet, Fıkra ve Eleştiri",
+    "Dil Bilgisi: Cümlenin Ögeleri, Cümle Türleri ve Anlatım Bozuklukları",
   ]),
   Tarih: topics("g11-tar", [
     "Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti (1595-1774)",
     "Değişim Çağında Avrupa ve Osmanlı",
     "Uluslararası İlişkilerde Denge Stratejisi (1774-1914)",
-    "Devrimler Çağında Değişen Devlet-Toplum İlişkileri",
-    "Sermaye ve Emek",
-    "XIX ve XX. Yüzyılda Değişen Gündelik Hayat",
+    "Devrimler Çağında Değişen Devlet-Toplum İlişkileri ve Modernleşme",
   ]),
 };
 
@@ -716,11 +728,6 @@ export function getCurriculumForStudent(
   const g = grade || "12";
 
   if (g === "9") {
-    if (field === "dil") {
-      return {
-        "9. Sınıf": { ...grade9Curriculum, İngilizce: grade9EnglishTopics },
-      };
-    }
     return { "9. Sınıf": grade9Curriculum };
   }
   if (g === "10") {
@@ -732,15 +739,15 @@ export function getCurriculumForStudent(
   if (g === "11") {
     const f = field || "sayisal";
     if (f === "esit-agirlik") {
-      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11EsitAgirlikCurriculum };
+      return { TYT: tymmTytCurriculum, "11. Sınıf": grade11EsitAgirlikCurriculum };
     }
     if (f === "sozel") {
-      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11SozelCurriculum };
+      return { TYT: tymmTytCurriculum, "11. Sınıf": grade11SozelCurriculum };
     }
     if (f === "dil") {
-      return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11DilCurriculum };
+      return { TYT: tymmTytCurriculum, "11. Sınıf": grade11DilCurriculum };
     }
-    return { TYT: masterCurriculum.TYT, "11. Sınıf": grade11SayisalCurriculum };
+    return { TYT: tymmTytCurriculum, "11. Sınıf": grade11SayisalCurriculum };
   }
 
   // 12 veya Mezun (YKS)
@@ -752,13 +759,14 @@ export function getCurriculumForStudent(
 
 export const allCurriculums: Record<string, Course> = {
   "9. Sınıf": grade9Curriculum,
-  "9. Sınıf (Dil)": { ...grade9Curriculum, İngilizce: grade9EnglishTopics },
+  "9. Sınıf (Dil)": grade9Curriculum,
   "9. Sınıf (Tekrar)": grade9Curriculum,
   "10. Sınıf": grade10Curriculum,
   "11. Sınıf (Sayısal)": grade11SayisalCurriculum,
   "11. Sınıf (Eşit Ağırlık)": grade11EsitAgirlikCurriculum,
   "11. Sınıf (Sözel)": grade11SozelCurriculum,
   "11. Sınıf (Dil)": grade11DilCurriculum,
+  "TYT (TYMM)": tymmTytCurriculum,
   TYT: masterCurriculum.TYT,
   AYT: masterCurriculum.AYT,
 };

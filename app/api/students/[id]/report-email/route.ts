@@ -48,6 +48,8 @@ export async function POST(
 
     const data = student.toObject({ flattenMaps: true }) as {
       name: string;
+      grade?: string;
+      field?: string;
       target?: string;
       parentEmail?: string;
       topics: TopicProgress[];
@@ -67,6 +69,8 @@ export async function POST(
       subject: developmentReportSubject(data.name),
       html: developmentReportHtml({
         studentName: data.name,
+        grade: data.grade,
+        field: data.field,
         target: data.target,
         topics: normalizeTopics(data.topics),
         solvedQuestionsByCourse: normalizeSolvedQuestions(

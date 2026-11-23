@@ -27,7 +27,7 @@ const mockExamTopicSchema = z.object({
   correctCount: z.number().int().min(0).max(100).optional(),
   wrongCount: z.number().int().min(0).max(100).optional(),
   emptyCount: z.number().int().min(0).max(100).optional(),
-  matchedTopicId: z.string().max(100).optional(),
+  matchedTopicId: z.string().max(150).optional(),
   matchedTopicTitle: z.string().max(200).optional(),
 });
 
@@ -39,7 +39,7 @@ const mockExamWrongTopicSchema = z.object({
   correctCount: z.number().int().min(0).max(100).optional(),
   wrongCount: z.number().int().min(0).max(100).optional(),
   emptyCount: z.number().int().min(0).max(100).optional(),
-  matchedTopicId: z.string().max(100).optional(),
+  matchedTopicId: z.string().max(150).optional(),
   matchedTopicTitle: z.string().max(200).optional(),
 });
 

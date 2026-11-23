@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { DropdownPanel } from "@/components/ui/soft-motion";
+import { getDenemeExamTypeLabel } from "@/data/denemeCourses";
+import {
+  formatDate,
+  formatNet,
+  type ExamGroup,
+  type ExamRankingEntry,
+} from "@/utils/deneme";
+import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
+import { formatTeacherLabel as formatTeacherLabelDefault } from "@/utils/staff-label";
+import { motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiBarChart2,
   FiCalendar,
@@ -12,15 +22,6 @@ import {
   FiPrinter,
 } from "react-icons/fi";
 import { toast } from "sonner";
-import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  formatDate,
-  formatNet,
-  type ExamGroup,
-  type ExamRankingEntry,
-} from "@/utils/deneme";
-import { formatTeacherLabel as formatTeacherLabelDefault } from "@/utils/staff-label";
 
 type RankingsResponse = {
   examGroups: ExamGroup[];
@@ -33,7 +34,7 @@ type Props = {
 };
 
 function formatGroupLabel(group: ExamGroup): string {
-  return `${group.type} · ${formatDate(group.date)} · ${group.studentCount} öğrenci`;
+  return `${getDenemeExamTypeLabel(group.type)} · ${formatDate(group.date)} · ${group.studentCount} öğrenci`;
 }
 
 function formatGroupNames(group: ExamGroup): string | null {
@@ -259,7 +260,7 @@ export default function AdminExamRankings({
     <section className="card-premium overflow-hidden border border-slate-100">
       <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
         <p className="text-sm text-slate-500">
-          Aynı tarih ve tipteki (TYT/AYT) denemelere giren öğrenciler birlikte
+          Aynı tarih ve tipteki (TYT/AYT/Lise) denemelere giren öğrenciler birlikte
           sıralanır. Farklı yazılmış deneme isimleri otomatik birleştirilir.
         </p>
       </div>
@@ -384,7 +385,7 @@ export default function AdminExamRankings({
                       >
                         <span className="min-w-0">
                           <span className="block text-base font-medium truncate">
-                            {group.type} · {formatDate(group.date)}
+                            {getDenemeExamTypeLabel(group.type)} · {formatDate(group.date)}
                           </span>
                           <span className="block text-xs text-slate-400 mt-0.5">
                             {group.studentCount} öğrenci

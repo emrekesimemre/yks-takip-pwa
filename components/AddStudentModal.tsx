@@ -1,15 +1,15 @@
 "use client";
 
+import AnimatedModal from "@/components/ui/AnimatedModal";
+import {
+  useStudentStore,
+  type GradeLevel,
+  type Student,
+  type StudentField,
+} from "@/store/useStudentStore";
 import { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "sonner";
-import {
-  useStudentStore,
-  type Student,
-  type GradeLevel,
-  type StudentField,
-} from "@/store/useStudentStore";
-import AnimatedModal from "@/components/ui/AnimatedModal";
 
 function toStoreStudent(data: Student): Student {
   return {
@@ -71,6 +71,8 @@ function StudentForm({
     if (!name.trim()) return;
 
     setIsSubmitting(true);
+    const effectiveField =
+      grade === "9" || grade === "10" ? "" : field || "sayisal";
     try {
       if (isEditMode && editingStudent?._id) {
         const res = await fetch(`/api/students/${editingStudent._id}`, {
@@ -79,7 +81,7 @@ function StudentForm({
           body: JSON.stringify({
             name: name.trim(),
             grade,
-            field,
+            field: effectiveField,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
             notes: notes.trim(),
@@ -93,7 +95,7 @@ function StudentForm({
           ...editingStudent,
           name: savedStudent.name,
           grade: savedStudent.grade ?? grade,
-          field: savedStudent.field ?? field,
+          field: savedStudent.field ?? effectiveField,
           target: savedStudent.target ?? "",
           parentEmail: savedStudent.parentEmail ?? "",
           reportToken: savedStudent.reportToken ?? editingStudent.reportToken,
@@ -108,7 +110,7 @@ function StudentForm({
           body: JSON.stringify({
             name: name.trim(),
             grade,
-            field,
+            field: effectiveField,
             target: target.trim(),
             parentEmail: parentEmail.trim(),
             notes: notes.trim(),
@@ -163,7 +165,13 @@ function StudentForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div
+          className={`grid grid-cols-1 ${
+            grade === "11" || grade === "12" || grade === "mezun"
+              ? "sm:grid-cols-2"
+              : ""
+          } gap-3`}
+        >
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Sınıf Düzeyi
@@ -175,7 +183,7 @@ function StudentForm({
                 setGrade(nextGrade);
                 if (nextGrade === "9" || nextGrade === "10") {
                   setField("");
-                } else if (!field) {
+                } else if (!field || field === "genel") {
                   setField("sayisal");
                 }
               }}
@@ -203,7 +211,6 @@ function StudentForm({
                 <option value="esit-agirlik">Eşit Ağırlık (TM)</option>
                 <option value="sozel">Sözel (TS)</option>
                 <option value="dil">Yabancı Dil (DİL)</option>
-                <option value="genel">Genel / Ortak</option>
               </select>
             </div>
           )}

@@ -51,6 +51,7 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
     { key: "G9-Tarih", name: "Tarih", maxQuestions: 10 },
     { key: "G9-Cografya", name: "Coğrafya", maxQuestions: 10 },
     { key: "G9-Din", name: "Din Kültürü", maxQuestions: 5 },
+    { key: "G9-Ingilizce", name: "İngilizce", maxQuestions: 10 },
   ],
   DENEME_10: [
     { key: "G10-Turkce", name: "Türk Dili ve Edebiyatı", maxQuestions: 30 },
@@ -62,6 +63,7 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
     { key: "G10-Cografya", name: "Coğrafya", maxQuestions: 10 },
     { key: "G10-Felsefe", name: "Felsefe", maxQuestions: 5 },
     { key: "G10-Din", name: "Din Kültürü", maxQuestions: 5 },
+    { key: "G10-Ingilizce", name: "İngilizce", maxQuestions: 10 },
   ],
   DENEME_11_SAY: [
     { key: "G11-Matematik", name: "Matematik", maxQuestions: 40 },
@@ -90,9 +92,10 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
     { key: "G11-Tmat", name: "Temel Matematik", maxQuestions: 25 },
   ],
   KDS: [
-    { key: "KDS-Ders1", name: "Ana Ders 1", maxQuestions: 20 },
-    { key: "KDS-Ders2", name: "Ana Ders 2", maxQuestions: 20 },
-    { key: "KDS-Ders3", name: "Ana Ders 3", maxQuestions: 20 },
+    { key: "KDS-Turkce", name: "Türkçe / Edebiyat", maxQuestions: 40 },
+    { key: "KDS-Matematik", name: "Matematik", maxQuestions: 40 },
+    { key: "KDS-Fen", name: "Fen Bilimleri", maxQuestions: 30 },
+    { key: "KDS-Sosyal", name: "Sosyal Bilimler", maxQuestions: 30 },
   ],
 };
 
@@ -165,11 +168,13 @@ export function getDenemeExamTypesForStudent(
   if (g === "9") {
     return [
       { type: "DENEME_9", label: "9. Sınıf Genel Deneme" },
+      { type: "KDS", label: "KDS / Kazanım Tarama" },
     ];
   }
   if (g === "10") {
     return [
       { type: "DENEME_10", label: "10. Sınıf Genel Deneme" },
+      { type: "KDS", label: "KDS / Kazanım Tarama" },
     ];
   }
   if (g === "11") {
@@ -177,20 +182,28 @@ export function getDenemeExamTypesForStudent(
     if (f === "esit-agirlik") {
       return [
         { type: "DENEME_11_EA", label: "11. Sınıf EA Deneme" },
+        { type: "TYT", label: "TYT Denemesi" },
+        { type: "KDS", label: "KDS / Kazanım Tarama" },
       ];
     }
     if (f === "sozel") {
       return [
         { type: "DENEME_11_SOZ", label: "11. Sınıf Sözel Deneme" },
+        { type: "TYT", label: "TYT Denemesi" },
+        { type: "KDS", label: "KDS / Kazanım Tarama" },
       ];
     }
     if (f === "dil") {
       return [
         { type: "DENEME_11_DIL", label: "11. Sınıf Dil Deneme" },
+        { type: "TYT", label: "TYT Denemesi" },
+        { type: "KDS", label: "KDS / Kazanım Tarama" },
       ];
     }
     return [
       { type: "DENEME_11_SAY", label: "11. Sınıf Sayısal Deneme" },
+      { type: "TYT", label: "TYT Denemesi" },
+      { type: "KDS", label: "KDS / Kazanım Tarama" },
     ];
   }
 
@@ -198,6 +211,7 @@ export function getDenemeExamTypesForStudent(
   return [
     { type: "TYT", label: "TYT" },
     { type: "AYT", label: "AYT" },
+    { type: "KDS", label: "KDS / Kazanım Tarama" },
   ];
 }
 

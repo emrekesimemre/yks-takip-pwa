@@ -13,8 +13,18 @@ export function calculateCourseNet(result: MockExamCourseResult): number {
 }
 
 export function getEffectiveExamCourses(exam: MockExam): MockExamCourseResult[] {
+  const hasCourseAnswers =
+    Array.isArray(exam.courses) &&
+    exam.courses.some(
+      (c) => (c.correct || 0) + (c.wrong || 0) + (c.empty || 0) > 0,
+    );
+
+  if (hasCourseAnswers) {
+    return exam.courses;
+  }
+
   const topics = exam.topics ?? exam.wrongTopics ?? [];
-  if (topics.length === 0) return exam.courses;
+  if (topics.length === 0) return exam.courses ?? [];
 
   const courses = new Map<string, MockExamCourseResult>();
   for (const topic of topics) {

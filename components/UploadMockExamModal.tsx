@@ -1,33 +1,29 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiUploadCloud,
-  FiFileText,
-  FiX,
-  FiCheck,
-  FiLoader,
-  FiKey,
-  FiCalendar,
-  FiList,
-  FiAlertCircle,
-  FiCheckSquare,
-  FiSquare,
-  FiEdit3,
-} from "react-icons/fi";
-import { toast } from "sonner";
+  getDenemeCourseDef,
+  getDenemeExamTypesForStudent,
+} from "@/data/denemeCourses";
 import type {
   MockExam,
   MockExamCourseResult,
   MockExamWrongTopic,
 } from "@/store/useStudentStore";
-import {
-  getDenemeExamTypesForStudent,
-  getDenemeCourseDef,
-} from "@/data/denemeCourses";
 import { calculateNet } from "@/utils/deneme";
 import { findCurriculumMatch } from "@/utils/topicMatcher";
+import { motion } from "framer-motion";
+import { useMemo, useRef, useState } from "react";
+import {
+  FiAlertCircle,
+  FiCheck,
+  FiCheckSquare,
+  FiFileText,
+  FiKey,
+  FiSquare,
+  FiUploadCloud,
+  FiX
+} from "react-icons/fi";
+import { toast } from "sonner";
 
 type Props = {
   isOpen: boolean;
@@ -71,14 +67,26 @@ export default function UploadMockExamModal({
   weeklySelectedTopics,
   onAddTopicsToPlan,
 }: Props) {
+  const availableExamTypes = useMemo(() => {
+    const list = getDenemeExamTypesForStudent(grade, field);
+    if (!list.some((t) => t.type === "KDS")) {
+      return [...list, { type: "KDS", label: "KDS / Kazanım Tarama" }];
+    }
+    return list;
+  }, [grade, field]);
+
   const [step, setStep] = useState<"upload" | "processing" | "review">(
     "upload",
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("GEMINI_API_KEY") || "";
+    }
+    return "";
+  });
   const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
-  const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
   // Review states
   const [examName, setExamName] = useState("");
@@ -105,14 +113,6 @@ export default function UploadMockExamModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // API Key'i localStorage'dan yükle
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedKey = localStorage.getItem("GEMINI_API_KEY");
-      if (storedKey) setApiKey(storedKey);
-    }
-  }, []);
-
   const handleSaveApiKey = (key: string) => {
     setApiKey(key);
     if (typeof window !== "undefined") {
@@ -124,7 +124,6 @@ export default function UploadMockExamModal({
     setStep("upload");
     setSelectedFile(null);
     setPreviewUrl(null);
-    setParsedData(null);
   };
 
   const handleClose = () => {
@@ -183,9 +182,11 @@ export default function UploadMockExamModal({
       }
 
       const data: ParsedData = json.data;
-      setParsedData(data);
       setExamName(data.examName || "Deneme Sınavı");
-      setExamType(data.examType || "TYT");
+      const matchedExamType = availableExamTypes.some((t) => t.type === data.examType)
+        ? data.examType
+        : availableExamTypes[0]?.type || "TYT";
+      setExamType(matchedExamType);
       setExamDate(data.date || new Date().toISOString().split("T")[0]);
       setCourses(
         data.courses.map((c) => ({
@@ -371,8 +372,6 @@ export default function UploadMockExamModal({
     toast.success("Deneme sınavı başarıyla eklendi!");
     handleClose();
   };
-
-  const availableExamTypes = getDenemeExamTypesForStudent(grade, field);
 
   const totalCorrect = courses.reduce((s, c) => s + c.correct, 0);
   const totalWrong = courses.reduce((s, c) => s + c.wrong, 0);
@@ -665,10 +664,9 @@ export default function UploadMockExamModal({
                       type="button"
                       onClick={handleAggregateCourses}
                       className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 transition-colors cursor-pointer"
-                      title="Tarih, Coğrafya, Felsefe gibi alt dersleri tek 'Sosyal Bilimler' altında birleştirir"
+                      title="Alt dersleri ana dersler altında birleştirir"
                     >
-                      Ana Dersleri Birleştir ({courses.length} Ders → 4 TYT
-                      Dersi)
+                      Alt Dersleri Ana Derslerde Birleştir ({courses.length} Ders)
                     </button>
                   )}
                 </div>

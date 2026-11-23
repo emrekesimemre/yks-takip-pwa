@@ -1,7 +1,7 @@
 import {
-  masterCurriculum,
-  getCurriculumForStudent,
   allCurriculums,
+  getCurriculumForStudent,
+  masterCurriculum,
   type Course,
 } from "@/data/subjects";
 import type { TopicProgress } from "@/store/useStudentStore";
@@ -30,7 +30,9 @@ export function getAllTopics(): TopicMeta[] {
             course,
             exam: section.startsWith("11. Sınıf")
               ? "11. Sınıf"
-              : section,
+              : section.startsWith("9. Sınıf")
+                ? "9. Sınıf"
+                : section,
           });
         }
       });

@@ -1,7 +1,11 @@
 "use client";
 
+import {
+  getDenemeCourseDef,
+  getDenemeExamTypeLabel,
+  getDenemeExamTypesForStudent,
+} from "@/data/denemeCourses";
 import { getCurriculumForStudent } from "@/data/subjects";
-import { getDenemeCourseDef } from "@/data/denemeCourses";
 import type {
   CourseSolvedQuestions,
   MockExam,
@@ -201,10 +205,26 @@ export default function DevelopmentReportView({
     solvedQuestionsByTopic,
   );
 
-  const tytExams = mockExams.filter((e) => e.type === "TYT");
-  const aytExams = mockExams.filter((e) => e.type === "AYT");
-  const tytTrend = getExamTrend(tytExams);
-  const aytTrend = getExamTrend(aytExams);
+  const availableExamDefs = getDenemeExamTypesForStudent(grade, field);
+  const primaryExamDef = availableExamDefs[0] ?? { type: "TYT", label: "TYT" };
+  const secondaryExamDef = availableExamDefs[1];
+
+  let primaryExams = mockExams.filter((e) => e.type === primaryExamDef.type);
+  const secondaryExams = secondaryExamDef
+    ? mockExams.filter((e) => e.type === secondaryExamDef.type)
+    : [];
+
+  let effectivePrimaryLabel = primaryExamDef.label;
+  const effectiveSecondaryLabel = secondaryExamDef?.label;
+
+  // Fallback: Eğer tanımlı tipe uymayan ama genel deneme varsa
+  if (primaryExams.length === 0 && secondaryExams.length === 0 && mockExams.length > 0) {
+    primaryExams = mockExams;
+    effectivePrimaryLabel = "Deneme";
+  }
+
+  const primaryTrend = getExamTrend(primaryExams);
+  const secondaryTrend = getExamTrend(secondaryExams);
   const courseAnalysis = analyzeByCourse(mockExams);
   const weakestCourses = getWeakestCourses(courseAnalysis);
 
@@ -401,18 +421,44 @@ export default function DevelopmentReportView({
           {/* Özet istatistikler */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
-              { label: "TYT Deneme Sayısı", value: tytExams.length || "—" },
               {
-                label: "TYT Ort. Net",
-                value:
-                  avgNet(tytExams) != null ? formatNet(avgNet(tytExams)!) : "—",
+                label: `${effectivePrimaryLabel} Sayısı`,
+                value: primaryExams.length || "—",
               },
-              { label: "AYT Deneme Sayısı", value: aytExams.length || "—" },
               {
-                label: "AYT Ort. Net",
+                label: `${effectivePrimaryLabel} Ort. Net`,
                 value:
-                  avgNet(aytExams) != null ? formatNet(avgNet(aytExams)!) : "—",
+                  avgNet(primaryExams) != null
+                    ? formatNet(avgNet(primaryExams)!)
+                    : "—",
               },
+              ...(effectiveSecondaryLabel
+                ? [
+                    {
+                      label: `${effectiveSecondaryLabel} Sayısı`,
+                      value: secondaryExams.length || "—",
+                    },
+                    {
+                      label: `${effectiveSecondaryLabel} Ort. Net`,
+                      value:
+                        avgNet(secondaryExams) != null
+                          ? formatNet(avgNet(secondaryExams)!)
+                          : "—",
+                    },
+                  ]
+                : [
+                    {
+                      label: "Toplam Deneme",
+                      value: mockExams.length || "—",
+                    },
+                    {
+                      label: "Genel Ort. Net",
+                      value:
+                        avgNet(mockExams) != null
+                          ? formatNet(avgNet(mockExams)!)
+                          : "—",
+                    },
+                  ]),
             ].map((s) => (
               <div
                 key={s.label}
@@ -512,40 +558,40 @@ export default function DevelopmentReportView({
           )}
 
           {/* Son deneme */}
-          {(lastNet(tytExams) != null || lastNet(aytExams) != null) && (
+          {(lastNet(primaryExams) != null || (effectiveSecondaryLabel && lastNet(secondaryExams) != null)) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              {lastNet(tytExams) != null && (
+              {lastNet(primaryExams) != null && (
                 <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-blue-800">
-                    Son TYT Denemesi
+                    Son {effectivePrimaryLabel}
                   </p>
                   <p className="text-2xl font-bold text-blue-700">
-                    {formatNet(lastNet(tytExams)!)} net
+                    {formatNet(lastNet(primaryExams)!)} net
                   </p>
                 </div>
               )}
-              {lastNet(aytExams) != null && (
+              {effectiveSecondaryLabel && lastNet(secondaryExams) != null && (
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-indigo-800">
-                    Son AYT Denemesi
+                    Son {effectiveSecondaryLabel}
                   </p>
                   <p className="text-2xl font-bold text-indigo-700">
-                    {formatNet(lastNet(aytExams)!)} net
+                    {formatNet(lastNet(secondaryExams)!)} net
                   </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* TYT Net Trendi */}
-          {tytTrend.length >= 2 && (
+          {/* Primary Net Trendi */}
+          {primaryTrend.length >= 2 && (
             <div className="mb-6">
               <h3 className="text-sm font-bold text-slate-700 mb-3">
-                TYT Net Gelişimi
+                {effectivePrimaryLabel} Net Gelişimi
               </h3>
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart
-                  data={tytTrend}
+                  data={primaryTrend}
                   margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -561,7 +607,7 @@ export default function DevelopmentReportView({
                   />
                   <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} />
                   <Tooltip
-                    formatter={(v) => [`${v} net`, "TYT"]}
+                    formatter={(v) => [`${v} net`, effectivePrimaryLabel]}
                     labelFormatter={(d) => formatDate(String(d))}
                   />
                   <Line
@@ -576,15 +622,15 @@ export default function DevelopmentReportView({
             </div>
           )}
 
-          {/* AYT Net Trendi */}
-          {aytTrend.length >= 2 && (
+          {/* Secondary Net Trendi */}
+          {effectiveSecondaryLabel && secondaryTrend.length >= 2 && (
             <div className="mb-6">
               <h3 className="text-sm font-bold text-slate-700 mb-3">
-                AYT Net Gelişimi
+                {effectiveSecondaryLabel} Net Gelişimi
               </h3>
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart
-                  data={aytTrend}
+                  data={secondaryTrend}
                   margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -600,7 +646,7 @@ export default function DevelopmentReportView({
                   />
                   <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} />
                   <Tooltip
-                    formatter={(v) => [`${v} net`, "AYT"]}
+                    formatter={(v) => [`${v} net`, effectiveSecondaryLabel]}
                     labelFormatter={(d) => formatDate(String(d))}
                   />
                   <Line
@@ -728,12 +774,20 @@ export default function DevelopmentReportView({
                         <td className="px-3 py-2 text-center">
                           <span
                             className={`text-xs font-bold px-2 py-0.5 rounded ${
-                              exam.type === "TYT"
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-orange-100 text-orange-700"
+                              exam.type.startsWith("DENEME_9")
+                                ? "bg-emerald-100 text-emerald-700"
+                                : exam.type.startsWith("DENEME_10")
+                                  ? "bg-teal-100 text-teal-700"
+                                  : exam.type.startsWith("DENEME_11")
+                                    ? "bg-blue-100 text-blue-700"
+                                    : exam.type === "TYT"
+                                      ? "bg-purple-100 text-purple-700"
+                                      : exam.type === "AYT"
+                                        ? "bg-orange-100 text-orange-700"
+                                        : "bg-slate-100 text-slate-700"
                             }`}
                           >
-                            {exam.type}
+                            {getDenemeExamTypeLabel(exam.type)}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-center text-slate-500 text-xs">

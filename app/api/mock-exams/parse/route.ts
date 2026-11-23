@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import {
   denemeCoursesByType,
   getDenemeCourseDef,
   getDenemeCourseDefByName,
 } from "@/data/denemeCourses";
+import { authOptions } from "@/lib/auth";
 import { findCurriculumMatch } from "@/utils/topicMatcher";
+import { getServerSession } from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
 
 // Örnek test karnesi (Kafa Dengi TYT karne görseli verisi)
 const DEMO_EXAM_DATA = {
@@ -53,6 +53,21 @@ const DEMO_EXAM_DATA = {
 
 function normalizeText(text: string): string {
   return text.toLowerCase().replace(/ı/g, "i").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u").trim();
+}
+
+function normalizeParsedExamType(rawType?: string): string {
+  if (!rawType) return "TYT";
+  const upper = rawType.trim().toUpperCase();
+  if (upper === "DENEME_11_SAYISAL" || upper === "DENEME_11_SAY") return "DENEME_11_SAY";
+  if (upper === "DENEME_11_ESIT_AGIRLIK" || upper === "DENEME_11_EA") return "DENEME_11_EA";
+  if (upper === "DENEME_11_SOZEL" || upper === "DENEME_11_SOZ") return "DENEME_11_SOZ";
+  if (upper === "DENEME_11_DIL") return "DENEME_11_DIL";
+  if (upper === "DENEME_9") return "DENEME_9";
+  if (upper === "DENEME_10") return "DENEME_10";
+  if (upper === "KDS") return "KDS";
+  if (upper === "AYT") return "AYT";
+  if (upper === "TYT") return "TYT";
+  return upper;
 }
 
 function mapCourseNameToKey(courseName: string, examType: string): string {
@@ -144,18 +159,39 @@ export async function POST(req: NextRequest) {
     }
 
     // Google Gemini API çağrısı
+    const gradeDisplay = grade === "mezun" ? "Mezun" : `${grade}. Sınıf`;
+    const fieldDisplay = field ? field.toUpperCase() : "Genel";
+
     const systemPrompt = `
 Sen Türkiye'deki MEB ve ÖSYM deneme sınavları karnelerini (Kafa Dengi, Özdebir, 3D, Bilgi Sarmal vb. Konu Analizli Sınav Karnesi) okuyan yapay zeka asistanısın.
 Eklenen görsel/PDF bir deneme sınavı konu analiz karnesidir.
 
+Öğrenci Bilgisi:
+Öğrenci Sınıfı: ${gradeDisplay}, Alan: ${fieldDisplay}
+
+Türkiye Yüzyılı Maarif Modeli (TYMM) ve MEB müfredatı kapsamında:
+- 9, 10 ve 11. sınıf lise denemelerinde ders isimleri "Türk Dili ve Edebiyatı", "Matematik", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü" şeklindedir.
+- 12. sınıf veya mezun TYT/AYT denemelerinde ise "Türkçe", "Sosyal Bilimler", "Fen Bilimleri", "Edebiyat" gibi ders başlıkları yer alabilir.
+
 Görevin:
-1. Sınav Adını ("KAFA DENGİ TYT DENEME SINAVI..." vb.) bul.
-2. Sınav Türünü bul: TYT, AYT, DENEME_9, DENEME_10, DENEME_11_SAY, DENEME_11_EA, DENEME_11_SOZ, DENEME_11_DIL veya KDS.
+1. Sınav Adını ("KAFA DENGİ TYT DENEME SINAVI...", "BİS 10. SINIF 1. DENEME" vb.) bul.
+2. Sınav Türünü tespit et:
+   - 9. Sınıf genel denemesi ise: DENEME_9
+   - 10. Sınıf genel denemesi ise: DENEME_10
+   - 11. Sınıf sayısal denemesi ise: DENEME_11_SAY
+   - 11. Sınıf eşit ağırlık denemesi ise: DENEME_11_EA
+   - 11. Sınıf sözel denemesi ise: DENEME_11_SOZ
+   - 11. Sınıf dil denemesi ise: DENEME_11_DIL
+   - TYT denemesi ise: TYT
+   - AYT denemesi ise: AYT
+   - KDS / Kazanım Tarama ise: KDS
+   ÖNEMLİ: 11. sınıf denemeleri için mutlaka tam olarak 'DENEME_11_SAY', 'DENEME_11_EA', 'DENEME_11_SOZ', 'DENEME_11_DIL' kodlarını döndür. Kesinlikle 'DENEME_11_SAYISAL' veya 'DENEME_11_ESIT_AGIRLIK' gibi uzun isimler yazma.
+   Öğrenci 9, 10 veya 11. sınıftaysa ve karne sınıf denemesiyse uygun DENEME_X türünü seç. Eğer 11 veya 12. sınıf öğrencisi bir TYT denemesine girmişse TYT olarak belirle.
 3. Öğrenci adını ve okulunu bul.
 4. Sınavdaki derslerin doğru (D), yanlış (Y), boş sayılarını tespit et.
 5. Konu analiz tablosundaki TÜM SATIRLARI (istisnasız her bir konuyu; öğrencinin doğru yaptığı, yanlış yaptığı ve boş bıraktığı tüm satırları) eksiksiz olarak listele.
    Her satır için:
-   - courseName: Ait olduğu ders adı (örneğin "Türkçe", "Tarih-1", "Coğrafya-1", "Felsefe", "Din Kültürü", vb.)
+   - courseName: Ait olduğu ders adı (örneğin "Türk Dili ve Edebiyatı", "Türkçe", "Matematik", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", vb.)
    - topicName: Karnede yazan konu adı (örneğin "Metne Sözcük Yerleştirme", "Sözcükte Anlam", vb.)
    - questionCount: Soru sayısı (S sütunu)
    - correctCount: Doğru sayısı (D sütunu)
@@ -363,7 +399,7 @@ Görevin:
     }
 
     const parsed = JSON.parse(cleanJson);
-    const examType = parsed.examType || "TYT";
+    const examType = normalizeParsedExamType(parsed.examType);
 
     // Karneden okunan alt dersleri (Tarih-1, Coğrafya-1, Felsefe vb.) orijinal isimleriyle aktar
     const mappedCourses =

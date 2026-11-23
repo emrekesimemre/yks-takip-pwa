@@ -1,4 +1,4 @@
-import { getCurriculumForStudent, allCurriculums, type Course } from "@/data/subjects";
+import { allCurriculums, getCurriculumForStudent, type Course } from "@/data/subjects";
 
 function normalize(text: string): string {
   return text
@@ -38,6 +38,21 @@ const SYNONYMS: Record<string, string[]> = {
   "kuvvet ve hareket": ["hareket ve kuvvet", "kuvvet tork ve denge", "kuvvet"],
   "paragrafin yapisi": ["paragrafta yapi", "paragraf"],
   "cumlede anlam": ["cumlede anlam", "anlam bilgisi"],
+  "sayilar": ["gercek sayilar", "uslu", "koklu", "aralik", "kumeler", "permutasyon", "kombinasyon", "binom", "polinom", "karmasik sayilar", "carpanlara ayirma"],
+  "nicelikler ve degisimler": ["fonksiyon", "dogrusal", "mutlak deger", "esitsizlik", "ikinci dereceden", "parabol", "trigonometri", "logaritma", "ustel"],
+  "geometrik sekiller": ["ucgende aci", "aci kenar", "eslik", "benzerlik", "cokgen", "dortgen", "cemberde aci", "teget", "kiris"],
+  "geometrik nicelikler": ["yardimci eleman", "ucgende alan", "kati cisim", "dairede alan", "analitik geometri", "dogrunun analitigi"],
+  "istatistiksel arastirma": ["veri", "istatistik", "merkezi egilim", "yayilim"],
+  "veriden olasiliga": ["olasilik", "kosullu olasilik", "bagimsiz olay"],
+  "akiskanlar": ["basinc", "kaldirma kuvveti", "bernoulli"],
+  "cesitlilik": ["maddenin halleri", "karisimlar", "cozeltiler", "gaz yasalari", "koligatif"],
+  "surdurulebilirlik": ["yesil kimya", "asit", "baz", "tuz", "cevre kimyasi"],
+  "organizasyon": ["hucre", "organel", "madde gecisleri", "siniflandirma"],
+  "yasam": ["canlilarin ortak ozellikleri", "inorganik", "organik", "enzim", "protein", "karbonhidrat"],
+  "sozun inceligi": ["siir", "soz sanatlari", "edebiyat"],
+  "anlam arayisi": ["hikaye", "roman", "anlatim teknikleri"],
+  "anlamin yapi taslari": ["makale", "deneme", "elestiri", "bilgilendirici metin"],
+  "dilin zenginligi": ["soz varligi", "deyim", "atasozu", "kelime gruplari"],
 };
 
 function scoreTopicMatch(
@@ -56,7 +71,7 @@ function scoreTopicMatch(
   } else if (titleNorm.includes(normTarget)) {
     score = 75;
   } else {
-    // 1. Eş anlamlı / Deneme ünite başlığı kontrolü
+    // 1. Eş anlamlı / Deneme ünite başlığı kontrolü (çift yönlü)
     for (const [key, synList] of Object.entries(SYNONYMS)) {
       if (normTarget.includes(key) || key.includes(normTarget)) {
         for (const syn of synList) {
@@ -65,9 +80,59 @@ function scoreTopicMatch(
           }
         }
       }
+      if (titleNorm.includes(key) || key.includes(titleNorm)) {
+        for (const syn of synList) {
+          if (normTarget.includes(syn) || syn.includes(normTarget)) {
+            score = Math.max(score, 85);
+          }
+        }
+      }
     }
 
-    // 2. Türkçe kök / ek esnekliği ile kelime kesişimi
+    // 2. Parantez içi alt konuları ayırıp kontrol et
+    const parenMatch = title.match(/\(([^)]+)\)/);
+    if (parenMatch) {
+      const parenNorm = normalize(parenMatch[1]);
+      if (parenNorm.includes(normTarget) || normTarget.includes(parenNorm)) {
+        score = Math.max(score, 90);
+      } else {
+        const subList = parenMatch[1]
+          .split(/[,/]/)
+          .map((s) => normalize(s.trim()))
+          .filter(Boolean);
+        for (const sub of subList) {
+          if (sub === normTarget || normTarget.includes(sub) || sub.includes(normTarget)) {
+            score = Math.max(score, 88);
+          }
+        }
+
+        const parenWords = parenNorm.split(" ").filter((w) => w.length > 2);
+        const targetWords = normTarget.split(" ").filter((w) => w.length > 2);
+        let parenMatchedCount = 0;
+        for (const tw of targetWords) {
+          const match = parenWords.some((pw) => {
+            if (pw === tw) return true;
+            if (tw.length >= 4 && pw.length >= 4) {
+              return tw.startsWith(pw) || pw.startsWith(tw);
+            }
+            return false;
+          });
+          if (match) parenMatchedCount++;
+        }
+        if (targetWords.length > 0 && parenMatchedCount > 0) {
+          const ratio = parenMatchedCount / targetWords.length;
+          if (ratio >= 0.8) {
+            score = Math.max(score, 85);
+          } else if (ratio >= 0.5) {
+            score = Math.max(score, 70);
+          } else {
+            score = Math.max(score, 35 * parenMatchedCount);
+          }
+        }
+      }
+    }
+
+    // 3. Türkçe kök / ek esnekliği ile kelime kesişimi
     const targetWords = normTarget.split(" ").filter((w) => w.length > 2);
     const titleWords = titleNorm.split(" ").filter((w) => w.length > 2);
     let matchedCount = 0;

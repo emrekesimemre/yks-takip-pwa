@@ -1,21 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { useSoftTransition } from "@/components/ui/soft-motion";
-import { toast } from "sonner";
-import type { MockExam } from "@/store/useStudentStore";
 import {
-  FiPrinter,
-  FiX,
-  FiDownload,
-  FiTrendingUp,
-  FiBarChart2,
-  FiAward,
-} from "react-icons/fi";
-import { FaWhatsapp } from "react-icons/fa";
-import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
-import { getDenemeCourseDef } from "@/data/denemeCourses";
+  getDenemeCourseDef,
+  getDenemeExamTypeLabel,
+  getDenemeExamTypesForStudent,
+} from "@/data/denemeCourses";
+import type { MockExam } from "@/store/useStudentStore";
 import {
   analyzeByCourse,
   calculateCourseNet,
@@ -26,6 +17,18 @@ import {
   getExamTrend,
   getWeakestCourses,
 } from "@/utils/deneme";
+import { downloadPdfBlob, generateReportPdfBlob } from "@/utils/exportPdf";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { FaWhatsapp } from "react-icons/fa";
+import {
+  FiAward,
+  FiBarChart2,
+  FiDownload,
+  FiPrinter,
+  FiTrendingUp,
+  FiX,
+} from "react-icons/fi";
 import {
   Bar,
   BarChart,
@@ -38,6 +41,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 
 type Props = {
   isOpen: boolean;
@@ -91,10 +95,25 @@ function MockExamReportBody({
   const latestExam = sortedExams[0];
   const latestTotals = latestExam ? calculateExamTotals(latestExam) : null;
 
-  const tytExams = mockExams.filter((e) => e.type === "TYT");
-  const aytExams = mockExams.filter((e) => e.type === "AYT");
-  const tytTrend = getExamTrend(tytExams);
-  const aytTrend = getExamTrend(aytExams);
+  const availableExamDefs = getDenemeExamTypesForStudent(grade, field);
+  const primaryExamDef = availableExamDefs[0] ?? { type: "TYT", label: "TYT" };
+  const secondaryExamDef = availableExamDefs[1];
+
+  let primaryExams = mockExams.filter((e) => e.type === primaryExamDef.type);
+  const secondaryExams = secondaryExamDef
+    ? mockExams.filter((e) => e.type === secondaryExamDef.type)
+    : [];
+
+  let effectivePrimaryLabel = primaryExamDef.label;
+  const effectiveSecondaryLabel = secondaryExamDef?.label;
+
+  if (primaryExams.length === 0 && secondaryExams.length === 0 && mockExams.length > 0) {
+    primaryExams = mockExams;
+    effectivePrimaryLabel = "Deneme";
+  }
+
+  const primaryTrend = getExamTrend(primaryExams);
+  const secondaryTrend = getExamTrend(secondaryExams);
   const courseAnalysis = analyzeByCourse(mockExams);
   const weakestCourses = getWeakestCourses(courseAnalysis);
 
@@ -478,7 +497,7 @@ function MockExamReportBody({
           )}
 
           {/* Net Gelişim Çizgi Grafiği */}
-          {(tytTrend.length >= 2 || aytTrend.length >= 2) && (
+          {(primaryTrend.length >= 2 || secondaryTrend.length >= 2) && (
             <div className="mb-8 border-t border-slate-200 pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <FiTrendingUp className="text-lg text-indigo-600" />
@@ -488,14 +507,14 @@ function MockExamReportBody({
               </div>
 
               <div className="grid grid-cols-1 gap-6">
-                {tytTrend.length >= 2 && (
+                {primaryTrend.length >= 2 && (
                   <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
                     <p className="text-xs font-bold text-blue-800 mb-2">
-                      TYT Net Gelişimi
+                      {effectivePrimaryLabel} Net Gelişimi
                     </p>
                     <ResponsiveContainer width="100%" height={160}>
                       <LineChart
-                        data={tytTrend}
+                        data={primaryTrend}
                         margin={{ top: 8, right: 20, left: -10, bottom: 4 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -511,7 +530,7 @@ function MockExamReportBody({
                         />
                         <YAxis tick={{ fontSize: 10, fill: "#64748b" }} />
                         <Tooltip
-                          formatter={(v) => [`${v} net`, "TYT"]}
+                          formatter={(v) => [`${v} net`, effectivePrimaryLabel]}
                           labelFormatter={(d) => formatDate(String(d))}
                         />
                         <Line
@@ -526,14 +545,14 @@ function MockExamReportBody({
                   </div>
                 )}
 
-                {aytTrend.length >= 2 && (
+                {secondaryTrend.length >= 2 && (
                   <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
                     <p className="text-xs font-bold text-purple-800 mb-2">
-                      AYT Net Gelişimi
+                      {effectiveSecondaryLabel} Net Gelişimi
                     </p>
                     <ResponsiveContainer width="100%" height={160}>
                       <LineChart
-                        data={aytTrend}
+                        data={secondaryTrend}
                         margin={{ top: 8, right: 20, left: -10, bottom: 4 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -549,7 +568,7 @@ function MockExamReportBody({
                         />
                         <YAxis tick={{ fontSize: 10, fill: "#64748b" }} />
                         <Tooltip
-                          formatter={(v) => [`${v} net`, "AYT"]}
+                          formatter={(v) => [`${v} net`, effectiveSecondaryLabel ?? "AYT"]}
                           labelFormatter={(d) => formatDate(String(d))}
                         />
                         <Line
@@ -680,10 +699,14 @@ function MockExamReportBody({
                             className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
                               exam.type === "TYT"
                                 ? "bg-blue-100 text-blue-700"
-                                : "bg-purple-100 text-purple-700"
+                                : exam.type === "AYT"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : exam.type === "KDS"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-emerald-100 text-emerald-800"
                             }`}
                           >
-                            {exam.type}
+                            {getDenemeExamTypeLabel(exam.type)}
                           </span>
                         </td>
                         <td className="py-2 px-3 text-right font-black text-indigo-600 text-sm">
