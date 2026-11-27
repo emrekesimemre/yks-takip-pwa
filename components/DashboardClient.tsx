@@ -19,7 +19,7 @@ import {
   FiCalendar,
   FiClock,
 } from "react-icons/fi";
-import { getOverallProgress } from "@/utils/curriculum";
+import { getOverallProgress, getStudentTopics } from "@/utils/curriculum";
 
 type DeleteTarget = { id: string; name: string };
 
@@ -204,7 +204,11 @@ export default function DashboardClient() {
               student.grade,
               student.field,
             );
-            const weeklyCount = student.weeklySelectedTopics?.length ?? 0;
+            const activeTopics = getStudentTopics(student.grade, student.field);
+            const activeTopicIdSet = new Set(activeTopics.map((t) => t.id));
+            const weeklyCount = (student.weeklySelectedTopics ?? []).filter((id) =>
+              activeTopicIdSet.has(id),
+            ).length;
             const inactiveDays = student.updatedAt
               ? daysSince(student.updatedAt)
               : 0;

@@ -22,7 +22,11 @@ import ConfirmModal from "@/components/ConfirmModal";
 import AddStudentModal from "@/components/AddStudentModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageTransition from "@/components/ui/PageTransition";
-import { getOverallProgress, getCourseKey } from "@/utils/curriculum";
+import {
+  getOverallProgress,
+  getCourseKey,
+  getStudentTopics,
+} from "@/utils/curriculum";
 import { normalizeSolvedQuestions, normalizeTopics } from "@/utils/student";
 import {
   FiArrowLeft,
@@ -464,9 +468,14 @@ export default function StudentDetailClient({
     currentStudent.grade,
     currentStudent.field,
   );
+  const studentActiveTopics = getStudentTopics(
+    currentStudent.grade,
+    currentStudent.field,
+  );
+  const activeTopicIds = new Set(studentActiveTopics.map((t) => t.id));
   const weeklySelected = Array.from(
     new Set(currentStudent.weeklySelectedTopics ?? []),
-  );
+  ).filter((id) => activeTopicIds.has(id));
   const solvedQuestions = currentStudent.solvedQuestionsByCourse ?? {};
   const solvedQuestionsByTopic = currentStudent.solvedQuestionsByTopic ?? {};
   const weeklySolvedQuestions =
@@ -683,6 +692,7 @@ export default function StudentDetailClient({
                     grade={currentStudent.grade}
                     field={currentStudent.field}
                     topics={currentStudent.topics}
+                    weeklySelectedTopics={weeklySelected}
                     solvedQuestionsByCourse={solvedQuestions}
                     solvedQuestionsByTopic={solvedQuestionsByTopic}
                     onToggleCompletion={handleToggleCompletion}

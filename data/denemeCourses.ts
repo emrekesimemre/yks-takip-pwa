@@ -72,6 +72,7 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
     { key: "G11-Biyoloji", name: "Biyoloji", maxQuestions: 13 },
     { key: "G11-Turkce", name: "Türk Dili ve Edebiyatı", maxQuestions: 25 },
     { key: "G11-Tarih", name: "Tarih", maxQuestions: 10 },
+    { key: "G11-Din", name: "Din Kültürü", maxQuestions: 5 },
   ],
   DENEME_11_EA: [
     { key: "G11-Matematik", name: "Matematik", maxQuestions: 40 },
@@ -79,17 +80,21 @@ export const denemeCoursesByType: Record<string, DenemeCourseDef[]> = {
     { key: "G11-Tarih", name: "Tarih", maxQuestions: 15 },
     { key: "G11-Cografya", name: "Coğrafya", maxQuestions: 15 },
     { key: "G11-Felsefe", name: "Felsefe", maxQuestions: 10 },
+    { key: "G11-Din", name: "Din Kültürü", maxQuestions: 5 },
   ],
   DENEME_11_SOZ: [
     { key: "G11-Turkce", name: "Türk Dili ve Edebiyatı", maxQuestions: 35 },
     { key: "G11-Tarih", name: "Tarih", maxQuestions: 20 },
     { key: "G11-Cografya", name: "Coğrafya", maxQuestions: 20 },
-    { key: "G11-Felsefe", name: "Felsefe & Mantık", maxQuestions: 25 },
+    { key: "G11-Felsefe", name: "Felsefe", maxQuestions: 15 },
+    { key: "G11-Din", name: "Din Kültürü", maxQuestions: 5 },
   ],
   DENEME_11_DIL: [
     { key: "G11-Ingilizce", name: "İngilizce", maxQuestions: 80 },
     { key: "G11-Turkce", name: "Türk Dili ve Edebiyatı", maxQuestions: 25 },
     { key: "G11-Tmat", name: "Temel Matematik", maxQuestions: 25 },
+    { key: "G11-Tarih", name: "Tarih", maxQuestions: 10 },
+    { key: "G11-Din", name: "Din Kültürü", maxQuestions: 5 },
   ],
   KDS: [
     { key: "KDS-Turkce", name: "Türkçe / Edebiyat", maxQuestions: 40 },

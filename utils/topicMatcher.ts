@@ -53,6 +53,17 @@ const SYNONYMS: Record<string, string[]> = {
   "anlam arayisi": ["hikaye", "roman", "anlatim teknikleri"],
   "anlamin yapi taslari": ["makale", "deneme", "elestiri", "bilgilendirici metin"],
   "dilin zenginligi": ["soz varligi", "deyim", "atasozu", "kelime gruplari"],
+  "tepki": ["uyaranlara tepki", "bitkilerde tepki", "hayvanlarda tepki", "destek hareket", "kas", "bagisiklik", "refleks", "reseptor", "tropizma"],
+  "homeostazi": ["homeostatik", "sinir sistemi", "endokrin sistem", "dolasim", "solunum", "bosaltim", "sistemler"],
+  "algoritma ve bilisim": ["algoritma", "mantik baglaclari", "niceleyiciler", "algoritmik problemler", "sayma stratejileri"],
+  "eslik ve benzerlik": ["eslik", "benzerlik", "tales", "oklid", "pisagor", "geometrik donusumler"],
+  "analitik inceleme": ["noktanin analitigi", "dogrunun analitigi", "dik koordinat", "egim", "analitik geometri"],
+  "bir diyecegim var": ["karagoz", "mektup", "dilekce", "e posta"],
+  "kultur yolculugu": ["orhun abideleri", "divanu lugatit turk", "asik atismasi", "hikaye ve ani"],
+  "yasamin izinde": ["roman", "biyografi", "tezkire", "mulakat", "radyo tiyatrosu"],
+  "hayatin aynasi": ["tiyatro", "kucurek hikaye", "belgesel"],
+  "kader irade ve sorumluluk": ["kader", "kaza", "irade", "akil", "sorumluluk"],
+  "yahudilik ve hristiyanlik": ["yahudilik", "hristiyanlik", "dinler tarihi"],
 };
 
 function scoreTopicMatch(

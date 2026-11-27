@@ -23,6 +23,7 @@ type Props = {
   topics: TopicProgress[];
   solvedQuestionsByCourse: CourseSolvedQuestions;
   solvedQuestionsByTopic: CourseSolvedQuestions;
+  weeklySelectedTopics?: string[];
   onToggleCompletion: (topicId: string, isCompleted: boolean) => void;
   onUpdateSolvedQuestions: (
     exam: string,
@@ -38,6 +39,7 @@ export default function GeneralProgressTab({
   topics,
   solvedQuestionsByCourse,
   solvedQuestionsByTopic,
+  weeklySelectedTopics = [],
   onToggleCompletion,
   onUpdateSolvedQuestions,
   onUpdateTopicSolvedQuestions,
@@ -187,13 +189,23 @@ export default function GeneralProgressTab({
                         solvedQuestionsByTopic,
                         topic.id,
                       );
+                      const isInWeeklyPlan = Boolean(
+                        weeklySelectedTopics?.includes(topic.id),
+                      );
+                      const isWorking =
+                        !isCompleted && (isInWeeklyPlan || topicSolved > 0);
+                      const workingBadgeLabel =
+                        topicSolved > 0 ? "Çalışılıyor" : "Planda";
+
                       return (
                         <div
                           key={topic.id}
                           className={`flex items-start gap-3 p-2.5 rounded-lg transition-all ${
                             isCompleted
                               ? "bg-green-50/60 border border-green-100"
-                              : "hover:bg-white border border-transparent hover:border-slate-100"
+                              : isWorking
+                                ? "bg-amber-50/70 border border-amber-200 shadow-2xs"
+                                : "hover:bg-white border border-transparent hover:border-slate-100"
                           }`}
                         >
                           <label className="relative mt-0.5 shrink-0 cursor-pointer">
@@ -209,7 +221,9 @@ export default function GeneralProgressTab({
                               className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                                 isCompleted
                                   ? "bg-green-500 border-green-500"
-                                  : "border-slate-300 bg-white"
+                                  : isWorking
+                                    ? "border-amber-400 bg-white hover:border-amber-500"
+                                    : "border-slate-300 bg-white"
                               }`}
                             >
                               {isCompleted && (
@@ -217,15 +231,30 @@ export default function GeneralProgressTab({
                               )}
                             </div>
                           </label>
-                          <span
-                            className={`flex-1 min-w-0 text-sm leading-snug ${
-                              isCompleted
-                                ? "line-through text-slate-400"
-                                : "text-slate-700"
-                            }`}
-                          >
-                            {topic.title}
-                          </span>
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-sm leading-snug ${
+                                isCompleted
+                                  ? "line-through text-slate-400"
+                                  : isWorking
+                                    ? "text-slate-800 font-medium"
+                                    : "text-slate-700"
+                              }`}
+                            >
+                              {topic.title}
+                            </span>
+                            {isWorking && (
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                  topicSolved > 0
+                                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                                    : "bg-amber-100/70 text-amber-700 border-amber-200/80"
+                                }`}
+                              >
+                                {workingBadgeLabel}
+                              </span>
+                            )}
+                          </div>
                           <CourseSolvedQuestionsInput
                             compact
                             label="Çözülen soru"
